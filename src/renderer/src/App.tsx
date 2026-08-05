@@ -1,35 +1,41 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import Sidebar from "./components/layout/Sidebar";
+import TopBar from "./components/layout/TopBar";
+import StatusBar from "./components/layout/StatusBar";
+import Dashboard from "./pages/Dashboard";
 
-function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-
+export default function App() {
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
-  )
-}
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        background: "#111",
+        color: "white",
+        overflow: "hidden",
+      }}
+    >
+      <Sidebar />
 
-export default App
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <TopBar />
+
+        <main
+          style={{
+            flex: 1,
+            overflow: "auto",
+          }}
+        >
+          <Dashboard />
+        </main>
+
+        <StatusBar />
+      </div>
+    </div>
+  );
+}
