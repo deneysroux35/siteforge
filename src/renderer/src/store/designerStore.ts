@@ -6,6 +6,8 @@ import type {
   Wall,
 } from "../components/designer/types";
 
+type WallEndpoint = "start" | "end";
+
 interface DesignerState {
   tool: Tool;
 
@@ -21,6 +23,8 @@ interface DesignerState {
   past: Wall[][];
   future: Wall[][];
 
+  wallEditSnapshot: Wall[] | null;
+
   setTool: (tool: Tool) => void;
   setZoom: (zoom: number) => void;
   setOffset: (x: number, y: number) => void;
@@ -32,6 +36,16 @@ interface DesignerState {
   selectWall: (id: string | null) => void;
   deleteSelectedWall: () => void;
 
+  beginWallEdit: () => void;
+
+  updateWallEndpoint: (
+    id: string,
+    endpoint: WallEndpoint,
+    point: Point,
+  ) => void;
+
+  finishWallEdit: () => void;
+
   undo: () => void;
   redo: () => void;
 }
@@ -42,6 +56,13 @@ function cloneWalls(walls: Wall[]): Wall[] {
     start: { ...wall.start },
     end: { ...wall.end },
   }));
+}
+
+function wallsAreEqual(
+  first: Wall[],
+  second: Wall[],
+): boolean {
+  return JSON.stringify(first) === JSON.stringify(second);
 }
 
 export const useDesignerStore =
@@ -59,6 +80,8 @@ export const useDesignerStore =
 
     past: [],
     future: [],
+
+    wallEditSnapshot: null,
 
     setTool: (tool) =>
       set({
@@ -135,6 +158,72 @@ export const useDesignerStore =
         };
       }),
 
+    beginWallEdit: () =>
+      set((state) => {
+        if (state.wallEditSnapshot) {
+          return state;
+        }
+
+        return {
+          wallEditSnapshot: cloneWalls(
+            state.walls,
+          ),
+        };
+      }),
+
+    updateWallEndpoint: (
+      id,
+      endpoint,
+      point,
+    ) =>
+      set((state) => ({
+        walls: state.walls.map((wall) => {
+          if (wall.id !== id) {
+            return wall;
+          }
+
+          return {
+            ...wall,
+            [endpoint]: {
+              x: point.x,
+              y: point.y,
+            },
+          };
+        }),
+      })),
+
+    finishWallEdit: () =>
+      set((state) => {
+        const snapshot =
+          state.wallEditSnapshot;
+
+        if (!snapshot) {
+          return state;
+        }
+
+        const changed = !wallsAreEqual(
+          snapshot,
+          state.walls,
+        );
+
+        if (!changed) {
+          return {
+            wallEditSnapshot: null,
+          };
+        }
+
+        return {
+          past: [
+            ...state.past,
+            cloneWalls(snapshot),
+          ],
+
+          future: [],
+
+          wallEditSnapshot: null,
+        };
+      }),
+
     undo: () =>
       set((state) => {
         if (state.past.length === 0) {
@@ -142,7 +231,9 @@ export const useDesignerStore =
         }
 
         const previousWalls =
-          state.past[state.past.length - 1];
+          state.past[
+            state.past.length - 1
+          ];
 
         return {
           walls: cloneWalls(previousWalls),
@@ -155,6 +246,7 @@ export const useDesignerStore =
           ],
 
           wallStart: null,
+          wallEditSnapshot: null,
         };
       }),
 
@@ -164,7 +256,8 @@ export const useDesignerStore =
           return state;
         }
 
-        const nextWalls = state.future[0];
+        const nextWalls =
+          state.future[0];
 
         return {
           walls: cloneWalls(nextWalls),
@@ -177,6 +270,7 @@ export const useDesignerStore =
           future: state.future.slice(1),
 
           wallStart: null,
+          wallEditSnapshot: null,
         };
       }),
   }));
