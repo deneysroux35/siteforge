@@ -6,11 +6,13 @@ import {
   Rect,
   Stage,
 } from "react-konva";
+
 import type { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 
 import Grid from "./Grid";
+import MeasurementLabel from "./MeasurementLabel";
 import WallLayer from "./WallLayer";
 
 import { useDesignerStore } from "../../store/designerStore";
@@ -47,9 +49,11 @@ export default function Canvas() {
   const zoom = useDesignerStore((state) => state.zoom);
   const offsetX = useDesignerStore((state) => state.offsetX);
   const offsetY = useDesignerStore((state) => state.offsetY);
+
   const isPanning = useDesignerStore(
     (state) => state.isPanning,
   );
+
   const wallStart = useDesignerStore(
     (state) => state.wallStart,
   );
@@ -57,15 +61,19 @@ export default function Canvas() {
   const setZoom = useDesignerStore(
     (state) => state.setZoom,
   );
+
   const setOffset = useDesignerStore(
     (state) => state.setOffset,
   );
+
   const setPanning = useDesignerStore(
     (state) => state.setPanning,
   );
+
   const setWallStart = useDesignerStore(
     (state) => state.setWallStart,
   );
+
   const addWall = useDesignerStore(
     (state) => state.addWall,
   );
@@ -91,10 +99,6 @@ export default function Canvas() {
   }, []);
 
   useEffect(() => {
-    /*
-      Reset the viewport to the centre whenever this
-      Canvas component starts.
-    */
     setZoom(1);
     setOffset(size.width / 2, size.height / 2);
   }, [size.width, size.height, setZoom, setOffset]);
@@ -170,8 +174,10 @@ export default function Canvas() {
 
     if (event.evt.button === 1) {
       event.evt.preventDefault();
+
       lastPanPointer.current = pointer;
       setPanning(true);
+
       return;
     }
 
@@ -187,6 +193,7 @@ export default function Canvas() {
     if (!wallStart) {
       setWallStart(worldPoint);
       setPreviewPoint(worldPoint);
+
       return;
     }
 
@@ -215,6 +222,7 @@ export default function Canvas() {
     if (isPanning && lastPanPointer.current) {
       const movementX =
         pointer.x - lastPanPointer.current.x;
+
       const movementY =
         pointer.y - lastPanPointer.current.y;
 
@@ -224,6 +232,7 @@ export default function Canvas() {
       );
 
       lastPanPointer.current = pointer;
+
       return;
     }
 
@@ -314,6 +323,11 @@ export default function Canvas() {
                 stroke="#39ff14"
                 strokeWidth={3}
                 listening={false}
+              />
+
+              <MeasurementLabel
+                start={wallStart}
+                end={previewPoint}
               />
             </>
           )}
