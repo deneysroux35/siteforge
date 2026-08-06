@@ -17,6 +17,7 @@ import {
 
 import CameraLibrary from "../library/CameraLibrary";
 
+import EquipmentSchedule from "./EquipmentSchedule";
 import InspectorSection from "./InspectorSection";
 import ProjectSummary from "./ProjectSummary";
 
@@ -156,8 +157,7 @@ export default function Properties() {
             padding: "15px 16px 13px",
             background:
               "rgba(19, 22, 28, 0.97)",
-            borderBottom:
-              "1px solid #2d333d",
+            borderBottom: "1px solid #2d333d",
             backdropFilter: "blur(10px)",
           }}
         >
@@ -270,8 +270,7 @@ export default function Properties() {
                     padding: "10px 12px",
                     background: "#3a1919",
                     color: "#ff8a8a",
-                    border:
-                      "1px solid #6b2929",
+                    border: "1px solid #6b2929",
                     borderRadius: 6,
                     cursor: "pointer",
                     fontWeight: 800,
@@ -295,8 +294,7 @@ export default function Properties() {
                     padding: "10px 12px",
                     background: "#173619",
                     color: "#39ff14",
-                    border:
-                      "1px solid #2f7a34",
+                    border: "1px solid #2f7a34",
                     borderRadius: 7,
                     cursor: "pointer",
                     fontWeight: 800,
@@ -316,17 +314,14 @@ export default function Properties() {
                     style={inputStyle}
                     onFocus={(event) => {
                       handleInputFocus();
-                      handleFocusHighlight(
-                        event,
-                      );
+                      handleFocusHighlight(event);
                     }}
                     onBlur={handleInputBlur}
                     onChange={(event) => {
                       updateCameraProperties(
                         selectedCamera.id,
                         {
-                          name:
-                            event.target.value,
+                          name: event.target.value,
                         },
                       );
                     }}
@@ -336,8 +331,7 @@ export default function Properties() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns:
-                      "1fr 1fr",
+                    gridTemplateColumns: "1fr 1fr",
                     gap: 9,
                     marginBottom: 14,
                   }}
@@ -350,16 +344,13 @@ export default function Properties() {
                     <input
                       type="number"
                       value={
-                        selectedCamera
-                          .position.x
+                        selectedCamera.position.x
                       }
                       step={GRID_SIZE}
                       style={inputStyle}
                       onFocus={(event) => {
                         handleInputFocus();
-                        handleFocusHighlight(
-                          event,
-                        );
+                        handleFocusHighlight(event);
                       }}
                       onBlur={handleInputBlur}
                       onChange={(event) => {
@@ -367,9 +358,7 @@ export default function Properties() {
                           event.target.value,
                         );
 
-                        if (
-                          Number.isNaN(value)
-                        ) {
+                        if (Number.isNaN(value)) {
                           return;
                         }
 
@@ -377,9 +366,7 @@ export default function Properties() {
                           selectedCamera.id,
                           {
                             position: {
-                              x: snapToGrid(
-                                value,
-                              ),
+                              x: snapToGrid(value),
                               y:
                                 selectedCamera
                                   .position.y,
@@ -398,16 +385,13 @@ export default function Properties() {
                     <input
                       type="number"
                       value={
-                        selectedCamera
-                          .position.y
+                        selectedCamera.position.y
                       }
                       step={GRID_SIZE}
                       style={inputStyle}
                       onFocus={(event) => {
                         handleInputFocus();
-                        handleFocusHighlight(
-                          event,
-                        );
+                        handleFocusHighlight(event);
                       }}
                       onBlur={handleInputBlur}
                       onChange={(event) => {
@@ -415,9 +399,7 @@ export default function Properties() {
                           event.target.value,
                         );
 
-                        if (
-                          Number.isNaN(value)
-                        ) {
+                        if (Number.isNaN(value)) {
                           return;
                         }
 
@@ -428,9 +410,7 @@ export default function Properties() {
                               x:
                                 selectedCamera
                                   .position.x,
-                              y: snapToGrid(
-                                value,
-                              ),
+                              y: snapToGrid(value),
                             },
                           },
                         );
@@ -454,9 +434,7 @@ export default function Properties() {
                     style={inputStyle}
                     onFocus={(event) => {
                       handleInputFocus();
-                      handleFocusHighlight(
-                        event,
-                      );
+                      handleFocusHighlight(event);
                     }}
                     onBlur={handleInputBlur}
                     onChange={(event) => {
@@ -464,9 +442,7 @@ export default function Properties() {
                         event.target.value,
                       );
 
-                      if (
-                        Number.isNaN(value)
-                      ) {
+                      if (Number.isNaN(value)) {
                         return;
                       }
 
@@ -474,8 +450,7 @@ export default function Properties() {
                         selectedCamera.id,
                         {
                           rotation:
-                            ((value % 360) +
-                              360) %
+                            ((value % 360) + 360) %
                             360,
                         },
                       );
@@ -592,8 +567,7 @@ export default function Properties() {
                   padding: "10px 12px",
                   background: "#3a1919",
                   color: "#ff8a8a",
-                  border:
-                    "1px solid #6b2929",
+                  border: "1px solid #6b2929",
                   borderRadius: 6,
                   cursor: "pointer",
                   fontWeight: 800,
@@ -608,9 +582,7 @@ export default function Properties() {
             title="Project Summary"
             subtitle="Live design intelligence"
             icon={
-              <ChartNoAxesCombined
-                size={15}
-              />
+              <ChartNoAxesCombined size={15} />
             }
             accentColor="#39ff14"
             badge="LIVE"
@@ -624,12 +596,10 @@ export default function Properties() {
             subtitle="Automatic product schedule"
             icon={<Package size={15} />}
             accentColor="#ffd54f"
-            defaultOpen={false}
+            badge="LIVE"
+            defaultOpen
           >
-            <div style={placeholderStyle}>
-              The live equipment schedule will
-              appear here in the next step.
-            </div>
+            <EquipmentSchedule />
           </InspectorSection>
 
           <InspectorSection
