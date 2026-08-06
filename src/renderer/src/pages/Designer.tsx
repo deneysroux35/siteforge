@@ -1,51 +1,54 @@
-import TopBar from "../components/layout/TopBar";
-
-import Toolbar from "../components/designer/Toolbar";
 import Canvas from "../components/designer/Canvas";
 import Properties from "../components/designer/Properties";
-import Status from "../components/designer/Status";
+import Toolbar from "../components/designer/Toolbar";
+
+import StatusBar from "../components/layout/StatusBar";
+import TopBar from "../components/layout/TopBar";
 
 export default function Designer() {
   return (
     <div
       style={{
         flex: 1,
-        display: "flex",
-        flexDirection: "column",
         minWidth: 0,
         minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
-        background: "#202225",
+        background: "#0f1115",
+        color: "#ffffff",
       }}
     >
       <TopBar />
 
-      <Toolbar />
-
       <div
         style={{
           flex: 1,
-          display: "flex",
-          minHeight: 0,
           minWidth: 0,
+          minHeight: 0,
+          display: "flex",
           overflow: "hidden",
         }}
       >
-        <div
+        <Toolbar />
+
+        <main
           style={{
             flex: 1,
             minWidth: 0,
             minHeight: 0,
+            position: "relative",
             overflow: "hidden",
+            background: "#202225",
           }}
         >
           <Canvas />
-        </div>
+        </main>
 
         <Properties />
       </div>
 
-      <Status />
+      <StatusBar />
     </div>
   );
 }
