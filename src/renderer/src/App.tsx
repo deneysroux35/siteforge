@@ -1,17 +1,16 @@
 import Sidebar from "./components/layout/Sidebar";
-import TopBar from "./components/layout/TopBar";
-import StatusBar from "./components/layout/StatusBar";
-import Dashboard from "./pages/Dashboard";
+import Designer from "./pages/Designer";
 
 export default function App() {
   return (
     <div
       style={{
         display: "flex",
+        width: "100vw",
         height: "100vh",
-        background: "#111",
-        color: "white",
         overflow: "hidden",
+        background: "#111",
+        color: "#fff",
       }}
     >
       <Sidebar />
@@ -19,22 +18,12 @@ export default function App() {
       <div
         style={{
           flex: 1,
+          minWidth: 0,
+          minHeight: 0,
           display: "flex",
-          flexDirection: "column",
         }}
       >
-        <TopBar />
-
-        <main
-          style={{
-            flex: 1,
-            overflow: "auto",
-          }}
-        >
-          <Dashboard />
-        </main>
-
-        <StatusBar />
+        <Designer />
       </div>
     </div>
   );
