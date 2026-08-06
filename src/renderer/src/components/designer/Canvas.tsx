@@ -11,9 +11,9 @@ import type { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 
-import Grid from "./Grid";
-import MeasurementLabel from "./MeasurementLabel";
-import WallLayer from "./WallLayer";
+import Grid from "./layers/Grid";
+import MeasurementLabel from "./layers/MeasurementLabel";
+import WallLayer from "./layers/WallLayer";
 
 import { useDesignerStore } from "../../store/designerStore";
 import type { Point } from "./types";
@@ -78,6 +78,14 @@ export default function Canvas() {
     (state) => state.addWall,
   );
 
+  const selectWall = useDesignerStore(
+    (state) => state.selectWall,
+  );
+
+  const deleteSelectedWall = useDesignerStore(
+    (state) => state.deleteSelectedWall,
+  );
+
   useEffect(() => {
     const container = containerRef.current;
 
@@ -109,6 +117,51 @@ export default function Canvas() {
       setPreviewPoint(null);
     }
   }, [tool, setWallStart]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+
+      const isTyping =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+
+      if (isTyping) {
+        return;
+      }
+
+      if (
+        event.key === "Delete" ||
+        event.key === "Backspace"
+      ) {
+        event.preventDefault();
+        deleteSelectedWall();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+
+        setWallStart(null);
+        setPreviewPoint(null);
+        selectWall(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [
+    deleteSelectedWall,
+    selectWall,
+    setWallStart,
+  ]);
 
   const getScreenPointer = (): ScreenPoint | null => {
     const pointer =
@@ -181,10 +234,16 @@ export default function Canvas() {
       return;
     }
 
-    if (
-      event.evt.button !== 0 ||
-      tool !== "wall"
-    ) {
+    if (event.evt.button !== 0) {
+      return;
+    }
+
+    if (tool === "select") {
+      selectWall(null);
+      return;
+    }
+
+    if (tool !== "wall") {
       return;
     }
 
@@ -208,6 +267,9 @@ export default function Canvas() {
       start: wallStart,
       end: worldPoint,
       thickness: 5,
+      selected: false,
+      material: "Brick",
+      height: 3000,
     });
 
     setWallStart(null);
@@ -246,6 +308,12 @@ export default function Canvas() {
     setPanning(false);
   };
 
+  const cursor = isPanning
+    ? "grabbing"
+    : tool === "wall"
+      ? "crosshair"
+      : "default";
+
   return (
     <div
       ref={containerRef}
@@ -254,11 +322,7 @@ export default function Canvas() {
         height: "100%",
         overflow: "hidden",
         background: "#202225",
-        cursor: isPanning
-          ? "grabbing"
-          : tool === "wall"
-            ? "crosshair"
-            : "default",
+        cursor,
       }}
     >
       <Stage

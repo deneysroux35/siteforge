@@ -24,6 +24,9 @@ interface DesignerState {
 
   setWallStart: (point: Point | null) => void;
   addWall: (wall: Wall) => void;
+
+  selectWall: (id: string | null) => void;
+  deleteSelectedWall: () => void;
 }
 
 export const useDesignerStore = create<DesignerState>((set) => ({
@@ -66,4 +69,20 @@ export const useDesignerStore = create<DesignerState>((set) => ({
     set((state) => ({
       walls: [...state.walls, wall],
     })),
+
+  selectWall: (id) =>
+    set((state) => ({
+      walls: state.walls.map((wall) => ({
+        ...wall,
+        selected: wall.id === id,
+      })),
+    })),
+
+  deleteSelectedWall: () =>
+    set((state) => ({
+      walls: state.walls.filter(
+        (wall) => !wall.selected,
+      ),
+    })),
 }));
+

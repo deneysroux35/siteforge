@@ -1,5 +1,5 @@
 import { Group, Rect, Text } from "react-konva";
-import type { Point } from "./types";
+import type { Point } from "../types";
 
 interface MeasurementLabelProps {
   start: Point | null;

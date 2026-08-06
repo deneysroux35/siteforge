@@ -1,7 +1,7 @@
 import { Stage, Layer, Rect } from "react-konva";
 import { useEffect, useRef, useState } from "react";
 
-import Grid from "./Grid";
+import Grid from "./layers/Grid";
 import Viewport from "./Viewport";
 
 import { useDesignerStore } from "../../store/designerStore";

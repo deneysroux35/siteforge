@@ -11,7 +11,16 @@ export interface Point {
 
 export interface Wall {
   id: string;
+
   start: Point;
+
   end: Point;
+
   thickness: number;
+
+  selected: boolean;
+
+  material: "Brick" | "Drywall";
+
+  height: number;
 }
