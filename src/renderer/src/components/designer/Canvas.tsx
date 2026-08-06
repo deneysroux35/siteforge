@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import {
   Circle,
   Layer,
@@ -9,6 +14,7 @@ import {
 
 import type { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
+
 import { v4 as uuidv4 } from "uuid";
 
 import Grid from "./layers/Grid";
@@ -16,6 +22,7 @@ import MeasurementLabel from "./layers/MeasurementLabel";
 import WallLayer from "./layers/WallLayer";
 
 import { useDesignerStore } from "../../store/designerStore";
+
 import type { Point } from "./types";
 
 const MIN_ZOOM = 0.25;
@@ -29,26 +36,47 @@ interface ScreenPoint {
 }
 
 function snapToGrid(value: number): number {
-  return Math.round(value / GRID_SIZE) * GRID_SIZE;
+  return (
+    Math.round(value / GRID_SIZE) *
+    GRID_SIZE
+  );
 }
 
 export default function Canvas() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<Konva.Stage>(null);
-  const lastPanPointer = useRef<ScreenPoint | null>(null);
+  const containerRef =
+    useRef<HTMLDivElement>(null);
+
+  const stageRef =
+    useRef<Konva.Stage>(null);
+
+  const lastPanPointer =
+    useRef<ScreenPoint | null>(null);
 
   const [size, setSize] = useState({
     width: 1,
     height: 1,
   });
 
-  const [previewPoint, setPreviewPoint] =
-    useState<Point | null>(null);
+  const [
+    previewPoint,
+    setPreviewPoint,
+  ] = useState<Point | null>(null);
 
-  const tool = useDesignerStore((state) => state.tool);
-  const zoom = useDesignerStore((state) => state.zoom);
-  const offsetX = useDesignerStore((state) => state.offsetX);
-  const offsetY = useDesignerStore((state) => state.offsetY);
+  const tool = useDesignerStore(
+    (state) => state.tool,
+  );
+
+  const zoom = useDesignerStore(
+    (state) => state.zoom,
+  );
+
+  const offsetX = useDesignerStore(
+    (state) => state.offsetX,
+  );
+
+  const offsetY = useDesignerStore(
+    (state) => state.offsetY,
+  );
 
   const isPanning = useDesignerStore(
     (state) => state.isPanning,
@@ -82,14 +110,27 @@ export default function Canvas() {
     (state) => state.selectWall,
   );
 
-  const deleteSelectedWall = useDesignerStore(
-    (state) => state.deleteSelectedWall,
+  const deleteSelectedWall =
+    useDesignerStore(
+      (state) =>
+        state.deleteSelectedWall,
+    );
+
+  const undo = useDesignerStore(
+    (state) => state.undo,
+  );
+
+  const redo = useDesignerStore(
+    (state) => state.redo,
   );
 
   useEffect(() => {
-    const container = containerRef.current;
+    const container =
+      containerRef.current;
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const updateSize = () => {
       setSize({
@@ -100,27 +141,46 @@ export default function Canvas() {
 
     updateSize();
 
-    const observer = new ResizeObserver(updateSize);
+    const observer =
+      new ResizeObserver(updateSize);
+
     observer.observe(container);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   useEffect(() => {
     setZoom(1);
-    setOffset(size.width / 2, size.height / 2);
-  }, [size.width, size.height, setZoom, setOffset]);
+
+    setOffset(
+      size.width / 2,
+      size.height / 2,
+    );
+  }, [
+    size.width,
+    size.height,
+    setZoom,
+    setOffset,
+  ]);
 
   useEffect(() => {
     if (tool !== "wall") {
       setWallStart(null);
       setPreviewPoint(null);
     }
-  }, [tool, setWallStart]);
+  }, [
+    tool,
+    setWallStart,
+  ]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      const target =
+        event.target as HTMLElement | null;
 
       const isTyping =
         target?.tagName === "INPUT" ||
@@ -128,6 +188,38 @@ export default function Canvas() {
         target?.isContentEditable;
 
       if (isTyping) {
+        return;
+      }
+
+      const modifierPressed =
+        event.ctrlKey ||
+        event.metaKey;
+
+      if (
+        modifierPressed &&
+        event.key.toLowerCase() === "z" &&
+        event.shiftKey
+      ) {
+        event.preventDefault();
+        redo();
+        return;
+      }
+
+      if (
+        modifierPressed &&
+        event.key.toLowerCase() === "z"
+      ) {
+        event.preventDefault();
+        undo();
+        return;
+      }
+
+      if (
+        modifierPressed &&
+        event.key.toLowerCase() === "y"
+      ) {
+        event.preventDefault();
+        redo();
         return;
       }
 
@@ -149,7 +241,10 @@ export default function Canvas() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
 
     return () => {
       window.removeEventListener(
@@ -159,45 +254,63 @@ export default function Canvas() {
     };
   }, [
     deleteSelectedWall,
+    redo,
     selectWall,
     setWallStart,
+    undo,
   ]);
 
-  const getScreenPointer = (): ScreenPoint | null => {
-    const pointer =
-      stageRef.current?.getPointerPosition();
+  const getScreenPointer =
+    (): ScreenPoint | null => {
+      const pointer =
+        stageRef.current
+          ?.getPointerPosition();
 
-    if (!pointer) return null;
+      if (!pointer) {
+        return null;
+      }
 
-    return {
-      x: pointer.x,
-      y: pointer.y,
+      return {
+        x: pointer.x,
+        y: pointer.y,
+      };
     };
-  };
 
   const screenToWorld = (
     pointer: ScreenPoint,
   ): Point => ({
     x: snapToGrid(
-      (pointer.x - offsetX) / zoom,
+      (pointer.x - offsetX) /
+        zoom,
     ),
+
     y: snapToGrid(
-      (pointer.y - offsetY) / zoom,
+      (pointer.y - offsetY) /
+        zoom,
     ),
   });
 
   const handleWheel = (
-    event: KonvaEventObject<WheelEvent>,
+    event:
+      KonvaEventObject<WheelEvent>,
   ) => {
     event.evt.preventDefault();
 
-    const pointer = getScreenPointer();
+    const pointer =
+      getScreenPointer();
 
-    if (!pointer) return;
+    if (!pointer) {
+      return;
+    }
 
     const worldPoint = {
-      x: (pointer.x - offsetX) / zoom,
-      y: (pointer.y - offsetY) / zoom,
+      x:
+        (pointer.x - offsetX) /
+        zoom,
+
+      y:
+        (pointer.y - offsetY) /
+        zoom,
     };
 
     const requestedZoom =
@@ -207,28 +320,40 @@ export default function Canvas() {
 
     const newZoom = Math.min(
       MAX_ZOOM,
-      Math.max(MIN_ZOOM, requestedZoom),
+      Math.max(
+        MIN_ZOOM,
+        requestedZoom,
+      ),
     );
 
     setZoom(newZoom);
 
     setOffset(
-      pointer.x - worldPoint.x * newZoom,
-      pointer.y - worldPoint.y * newZoom,
+      pointer.x -
+        worldPoint.x * newZoom,
+
+      pointer.y -
+        worldPoint.y * newZoom,
     );
   };
 
   const handleMouseDown = (
-    event: KonvaEventObject<MouseEvent>,
+    event:
+      KonvaEventObject<MouseEvent>,
   ) => {
-    const pointer = getScreenPointer();
+    const pointer =
+      getScreenPointer();
 
-    if (!pointer) return;
+    if (!pointer) {
+      return;
+    }
 
     if (event.evt.button === 1) {
       event.evt.preventDefault();
 
-      lastPanPointer.current = pointer;
+      lastPanPointer.current =
+        pointer;
+
       setPanning(true);
 
       return;
@@ -247,64 +372,92 @@ export default function Canvas() {
       return;
     }
 
-    const worldPoint = screenToWorld(pointer);
+    const worldPoint =
+      screenToWorld(pointer);
 
     if (!wallStart) {
       setWallStart(worldPoint);
+
       setPreviewPoint(worldPoint);
 
       return;
     }
 
     const zeroLength =
-      wallStart.x === worldPoint.x &&
-      wallStart.y === worldPoint.y;
+      wallStart.x ===
+        worldPoint.x &&
+      wallStart.y ===
+        worldPoint.y;
 
-    if (zeroLength) return;
+    if (zeroLength) {
+      return;
+    }
 
     addWall({
       id: uuidv4(),
+
       start: wallStart,
+
       end: worldPoint,
+
       thickness: 5,
+
       selected: false,
+
       material: "Brick",
+
       height: 3000,
     });
 
     setWallStart(null);
+
     setPreviewPoint(null);
   };
 
   const handleMouseMove = () => {
-    const pointer = getScreenPointer();
+    const pointer =
+      getScreenPointer();
 
-    if (!pointer) return;
+    if (!pointer) {
+      return;
+    }
 
-    if (isPanning && lastPanPointer.current) {
+    if (
+      isPanning &&
+      lastPanPointer.current
+    ) {
       const movementX =
-        pointer.x - lastPanPointer.current.x;
+        pointer.x -
+        lastPanPointer.current.x;
 
       const movementY =
-        pointer.y - lastPanPointer.current.y;
+        pointer.y -
+        lastPanPointer.current.y;
 
       setOffset(
         offsetX + movementX,
         offsetY + movementY,
       );
 
-      lastPanPointer.current = pointer;
+      lastPanPointer.current =
+        pointer;
 
       return;
     }
 
-    if (tool === "wall" && wallStart) {
-      setPreviewPoint(screenToWorld(pointer));
+    if (
+      tool === "wall" &&
+      wallStart
+    ) {
+      setPreviewPoint(
+        screenToWorld(pointer),
+      );
     }
   };
 
   const stopPanning = () => {
     lastPanPointer.current = null;
+
     setPanning(false);
   };
 
@@ -330,10 +483,16 @@ export default function Canvas() {
         width={size.width}
         height={size.height}
         onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
+        onMouseDown={
+          handleMouseDown
+        }
+        onMouseMove={
+          handleMouseMove
+        }
         onMouseUp={stopPanning}
-        onMouseLeave={stopPanning}
+        onMouseLeave={
+          stopPanning
+        }
       >
         <Layer listening={false}>
           <Rect
@@ -351,50 +510,53 @@ export default function Canvas() {
           scaleX={zoom}
           scaleY={zoom}
         >
-          <Grid gridSize={GRID_SIZE} />
+          <Grid
+            gridSize={GRID_SIZE}
+          />
 
           <WallLayer />
 
-          {wallStart && previewPoint && (
-            <>
-              <Line
-                points={[
-                  wallStart.x,
-                  wallStart.y,
-                  previewPoint.x,
-                  previewPoint.y,
-                ]}
-                stroke="#39ff14"
-                strokeWidth={5}
-                dash={[14, 8]}
-                lineCap="round"
-                listening={false}
-              />
+          {wallStart &&
+            previewPoint && (
+              <>
+                <Line
+                  points={[
+                    wallStart.x,
+                    wallStart.y,
+                    previewPoint.x,
+                    previewPoint.y,
+                  ]}
+                  stroke="#39ff14"
+                  strokeWidth={5}
+                  dash={[14, 8]}
+                  lineCap="round"
+                  listening={false}
+                />
 
-              <Circle
-                x={wallStart.x}
-                y={wallStart.y}
-                radius={7}
-                fill="#39ff14"
-                listening={false}
-              />
+                <Circle
+                  x={wallStart.x}
+                  y={wallStart.y}
+                  radius={7}
+                  fill="#39ff14"
+                  listening={false}
+                />
 
-              <Circle
-                x={previewPoint.x}
-                y={previewPoint.y}
-                radius={7}
-                fill="#ffffff"
-                stroke="#39ff14"
-                strokeWidth={3}
-                listening={false}
-              />
+                <Circle
+                  x={previewPoint.x}
+                  y={previewPoint.y}
+                  radius={7}
+                  fill="#ffffff"
+                  stroke="#39ff14"
+                  strokeWidth={3}
+                  listening={false}
+                />
 
-              <MeasurementLabel
-                start={wallStart}
-                end={previewPoint}
-              />
-            </>
-          )}
+                <MeasurementLabel
+                  start={wallStart}
+                  end={previewPoint}
+                />
+              </>
+            )}
         </Layer>
       </Stage>
     </div>
