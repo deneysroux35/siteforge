@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import {
   Circle,
   Layer,
@@ -9,6 +14,7 @@ import {
 
 import type { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
+
 import { v4 as uuidv4 } from "uuid";
 
 import CameraLayer from "./layers/CameraLayer";
@@ -18,6 +24,7 @@ import SelectionLayer from "./layers/SelectionLayer";
 import WallLayer from "./layers/WallLayer";
 
 import { useDesignerStore } from "../../store/designerStore";
+
 import type { Point } from "./types";
 
 const MIN_ZOOM = 0.25;
@@ -30,67 +37,116 @@ interface ScreenPoint {
   y: number;
 }
 
-function snapToGrid(value: number): number {
-  return Math.round(value / GRID_SIZE) * GRID_SIZE;
+function snapToGrid(
+  value: number,
+): number {
+  return (
+    Math.round(
+      value / GRID_SIZE,
+    ) * GRID_SIZE
+  );
 }
 
 export default function Canvas() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<Konva.Stage>(null);
-  const lastPanPointer = useRef<ScreenPoint | null>(null);
+  const containerRef =
+    useRef<HTMLDivElement>(null);
 
-  const [size, setSize] = useState({
-    width: 1,
-    height: 1,
-  });
+  const stageRef =
+    useRef<Konva.Stage>(null);
 
-  const [previewPoint, setPreviewPoint] =
-    useState<Point | null>(null);
+  const lastPanPointer =
+    useRef<ScreenPoint | null>(
+      null,
+    );
 
-  const tool = useDesignerStore((state) => state.tool);
-  const zoom = useDesignerStore((state) => state.zoom);
-  const offsetX = useDesignerStore((state) => state.offsetX);
-  const offsetY = useDesignerStore((state) => state.offsetY);
+  const [size, setSize] =
+    useState({
+      width: 1,
+      height: 1,
+    });
 
-  const isPanning = useDesignerStore(
-    (state) => state.isPanning,
+  const [
+    previewPoint,
+    setPreviewPoint,
+  ] = useState<Point | null>(
+    null,
   );
 
-  const wallStart = useDesignerStore(
-    (state) => state.wallStart,
+  const tool = useDesignerStore(
+    (state) => state.tool,
   );
 
-  const setZoom = useDesignerStore(
-    (state) => state.setZoom,
+  const zoom = useDesignerStore(
+    (state) => state.zoom,
   );
 
-  const setOffset = useDesignerStore(
-    (state) => state.setOffset,
-  );
+  const offsetX =
+    useDesignerStore(
+      (state) => state.offsetX,
+    );
 
-  const setPanning = useDesignerStore(
-    (state) => state.setPanning,
-  );
+  const offsetY =
+    useDesignerStore(
+      (state) => state.offsetY,
+    );
 
-  const setWallStart = useDesignerStore(
-    (state) => state.setWallStart,
-  );
+  const isPanning =
+    useDesignerStore(
+      (state) =>
+        state.isPanning,
+    );
 
-  const addWall = useDesignerStore(
-    (state) => state.addWall,
-  );
+  const wallStart =
+    useDesignerStore(
+      (state) =>
+        state.wallStart,
+    );
 
-  const addCamera = useDesignerStore(
-    (state) => state.addCamera,
-  );
+  const setZoom =
+    useDesignerStore(
+      (state) => state.setZoom,
+    );
 
-  const selectWall = useDesignerStore(
-    (state) => state.selectWall,
-  );
+  const setOffset =
+    useDesignerStore(
+      (state) =>
+        state.setOffset,
+    );
 
-  const deleteSelectedWall = useDesignerStore(
-    (state) => state.deleteSelectedWall,
-  );
+  const setPanning =
+    useDesignerStore(
+      (state) =>
+        state.setPanning,
+    );
+
+  const setWallStart =
+    useDesignerStore(
+      (state) =>
+        state.setWallStart,
+    );
+
+  const addWall =
+    useDesignerStore(
+      (state) => state.addWall,
+    );
+
+  const addCamera =
+    useDesignerStore(
+      (state) =>
+        state.addCamera,
+    );
+
+  const clearSelection =
+    useDesignerStore(
+      (state) =>
+        state.clearSelection,
+    );
+
+  const deleteSelectedObject =
+    useDesignerStore(
+      (state) =>
+        state.deleteSelectedObject,
+    );
 
   const undo = useDesignerStore(
     (state) => state.undo,
@@ -101,7 +157,8 @@ export default function Canvas() {
   );
 
   useEffect(() => {
-    const container = containerRef.current;
+    const container =
+      containerRef.current;
 
     if (!container) {
       return;
@@ -109,14 +166,20 @@ export default function Canvas() {
 
     const updateSize = () => {
       setSize({
-        width: container.clientWidth,
-        height: container.clientHeight,
+        width:
+          container.clientWidth,
+        height:
+          container.clientHeight,
       });
     };
 
     updateSize();
 
-    const observer = new ResizeObserver(updateSize);
+    const observer =
+      new ResizeObserver(
+        updateSize,
+      );
+
     observer.observe(container);
 
     return () => {
@@ -126,7 +189,11 @@ export default function Canvas() {
 
   useEffect(() => {
     setZoom(1);
-    setOffset(size.width / 2, size.height / 2);
+
+    setOffset(
+      size.width / 2,
+      size.height / 2,
+    );
   }, [
     size.width,
     size.height,
@@ -139,18 +206,25 @@ export default function Canvas() {
       setWallStart(null);
       setPreviewPoint(null);
     }
-  }, [tool, setWallStart]);
+  }, [
+    tool,
+    setWallStart,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (
       event: KeyboardEvent,
     ) => {
       const target =
-        event.target as HTMLElement | null;
+        event.target as
+          | HTMLElement
+          | null;
 
       const isTyping =
-        target?.tagName === "INPUT" ||
-        target?.tagName === "TEXTAREA" ||
+        target?.tagName ===
+          "INPUT" ||
+        target?.tagName ===
+          "TEXTAREA" ||
         target?.isContentEditable;
 
       if (isTyping) {
@@ -158,12 +232,14 @@ export default function Canvas() {
       }
 
       const modifierPressed =
-        event.ctrlKey || event.metaKey;
+        event.ctrlKey ||
+        event.metaKey;
 
       if (
         modifierPressed &&
         event.shiftKey &&
-        event.key.toLowerCase() === "z"
+        event.key.toLowerCase() ===
+          "z"
       ) {
         event.preventDefault();
         redo();
@@ -172,7 +248,8 @@ export default function Canvas() {
 
       if (
         modifierPressed &&
-        event.key.toLowerCase() === "z"
+        event.key.toLowerCase() ===
+          "z"
       ) {
         event.preventDefault();
         undo();
@@ -181,7 +258,8 @@ export default function Canvas() {
 
       if (
         modifierPressed &&
-        event.key.toLowerCase() === "y"
+        event.key.toLowerCase() ===
+          "y"
       ) {
         event.preventDefault();
         redo();
@@ -193,16 +271,19 @@ export default function Canvas() {
         event.key === "Backspace"
       ) {
         event.preventDefault();
-        deleteSelectedWall();
+
+        deleteSelectedObject();
         return;
       }
 
-      if (event.key === "Escape") {
+      if (
+        event.key === "Escape"
+      ) {
         event.preventDefault();
 
         setWallStart(null);
         setPreviewPoint(null);
-        selectWall(null);
+        clearSelection();
       }
     };
 
@@ -218,9 +299,9 @@ export default function Canvas() {
       );
     };
   }, [
-    deleteSelectedWall,
+    clearSelection,
+    deleteSelectedObject,
     redo,
-    selectWall,
     setWallStart,
     undo,
   ]);
@@ -228,7 +309,8 @@ export default function Canvas() {
   const getScreenPointer =
     (): ScreenPoint | null => {
       const pointer =
-        stageRef.current?.getPointerPosition();
+        stageRef.current
+          ?.getPointerPosition();
 
       if (!pointer) {
         return null;
@@ -244,28 +326,37 @@ export default function Canvas() {
     pointer: ScreenPoint,
   ): Point => ({
     x: snapToGrid(
-      (pointer.x - offsetX) / zoom,
+      (pointer.x - offsetX) /
+        zoom,
     ),
 
     y: snapToGrid(
-      (pointer.y - offsetY) / zoom,
+      (pointer.y - offsetY) /
+        zoom,
     ),
   });
 
   const handleWheel = (
-    event: KonvaEventObject<WheelEvent>,
+    event:
+      KonvaEventObject<WheelEvent>,
   ) => {
     event.evt.preventDefault();
 
-    const pointer = getScreenPointer();
+    const pointer =
+      getScreenPointer();
 
     if (!pointer) {
       return;
     }
 
     const worldPoint = {
-      x: (pointer.x - offsetX) / zoom,
-      y: (pointer.y - offsetY) / zoom,
+      x:
+        (pointer.x - offsetX) /
+        zoom,
+
+      y:
+        (pointer.y - offsetY) /
+        zoom,
     };
 
     const requestedZoom =
@@ -275,55 +366,76 @@ export default function Canvas() {
 
     const newZoom = Math.min(
       MAX_ZOOM,
-      Math.max(MIN_ZOOM, requestedZoom),
+      Math.max(
+        MIN_ZOOM,
+        requestedZoom,
+      ),
     );
 
     setZoom(newZoom);
 
     setOffset(
-      pointer.x - worldPoint.x * newZoom,
-      pointer.y - worldPoint.y * newZoom,
+      pointer.x -
+        worldPoint.x *
+          newZoom,
+
+      pointer.y -
+        worldPoint.y *
+          newZoom,
     );
   };
 
   const handleMouseDown = (
-    event: KonvaEventObject<MouseEvent>,
+    event:
+      KonvaEventObject<MouseEvent>,
   ) => {
-    const pointer = getScreenPointer();
+    const pointer =
+      getScreenPointer();
 
     if (!pointer) {
       return;
     }
 
-    if (event.evt.button === 1) {
+    if (
+      event.evt.button === 1
+    ) {
       event.evt.preventDefault();
 
-      lastPanPointer.current = pointer;
-      setPanning(true);
+      lastPanPointer.current =
+        pointer;
 
+      setPanning(true);
       return;
     }
 
-    if (event.evt.button !== 0) {
+    if (
+      event.evt.button !== 0
+    ) {
       return;
     }
 
     if (tool === "select") {
       const clickedStage =
-        event.target === event.target.getStage();
+        event.target ===
+        event.target.getStage();
 
       const clickedBackground =
-        event.target.name() === "canvas-background";
+        event.target.name() ===
+        "canvas-background";
 
-      if (clickedStage || clickedBackground) {
-        selectWall(null);
+      if (
+        clickedStage ||
+        clickedBackground
+      ) {
+        clearSelection();
       }
 
       return;
     }
 
     if (tool === "camera") {
-      const worldPoint = screenToWorld(pointer);
+      const worldPoint =
+        screenToWorld(pointer);
 
       addCamera({
         id: uuidv4(),
@@ -342,18 +454,22 @@ export default function Canvas() {
       return;
     }
 
-    const worldPoint = screenToWorld(pointer);
+    const worldPoint =
+      screenToWorld(pointer);
 
     if (!wallStart) {
       setWallStart(worldPoint);
-      setPreviewPoint(worldPoint);
-
+      setPreviewPoint(
+        worldPoint,
+      );
       return;
     }
 
     const zeroLength =
-      wallStart.x === worldPoint.x &&
-      wallStart.y === worldPoint.y;
+      wallStart.x ===
+        worldPoint.x &&
+      wallStart.y ===
+        worldPoint.y;
 
     if (zeroLength) {
       return;
@@ -373,44 +489,52 @@ export default function Canvas() {
     setPreviewPoint(null);
   };
 
-  const handleMouseMove = () => {
-    const pointer = getScreenPointer();
+  const handleMouseMove =
+    () => {
+      const pointer =
+        getScreenPointer();
 
-    if (!pointer) {
-      return;
-    }
+      if (!pointer) {
+        return;
+      }
 
-    if (
-      isPanning &&
-      lastPanPointer.current
-    ) {
-      const movementX =
-        pointer.x -
-        lastPanPointer.current.x;
+      if (
+        isPanning &&
+        lastPanPointer.current
+      ) {
+        const movementX =
+          pointer.x -
+          lastPanPointer.current.x;
 
-      const movementY =
-        pointer.y -
-        lastPanPointer.current.y;
+        const movementY =
+          pointer.y -
+          lastPanPointer.current.y;
 
-      setOffset(
-        offsetX + movementX,
-        offsetY + movementY,
-      );
+        setOffset(
+          offsetX + movementX,
+          offsetY + movementY,
+        );
 
-      lastPanPointer.current = pointer;
+        lastPanPointer.current =
+          pointer;
 
-      return;
-    }
+        return;
+      }
 
-    if (tool === "wall" && wallStart) {
-      setPreviewPoint(
-        screenToWorld(pointer),
-      );
-    }
-  };
+      if (
+        tool === "wall" &&
+        wallStart
+      ) {
+        setPreviewPoint(
+          screenToWorld(pointer),
+        );
+      }
+    };
 
   const stopPanning = () => {
-    lastPanPointer.current = null;
+    lastPanPointer.current =
+      null;
+
     setPanning(false);
   };
 
@@ -438,12 +562,20 @@ export default function Canvas() {
         width={size.width}
         height={size.height}
         onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
+        onMouseDown={
+          handleMouseDown
+        }
+        onMouseMove={
+          handleMouseMove
+        }
         onMouseUp={stopPanning}
-        onMouseLeave={stopPanning}
+        onMouseLeave={
+          stopPanning
+        }
       >
-        <Layer listening={false}>
+        <Layer
+          listening={false}
+        >
           <Rect
             name="canvas-background"
             x={0}
@@ -460,7 +592,9 @@ export default function Canvas() {
           scaleX={zoom}
           scaleY={zoom}
         >
-          <Grid gridSize={GRID_SIZE} />
+          <Grid
+            gridSize={GRID_SIZE}
+          />
 
           <WallLayer />
 
@@ -468,46 +602,47 @@ export default function Canvas() {
 
           <SelectionLayer />
 
-          {wallStart && previewPoint && (
-            <>
-              <Line
-                points={[
-                  wallStart.x,
-                  wallStart.y,
-                  previewPoint.x,
-                  previewPoint.y,
-                ]}
-                stroke="#39ff14"
-                strokeWidth={5}
-                dash={[14, 8]}
-                lineCap="round"
-                listening={false}
-              />
+          {wallStart &&
+            previewPoint && (
+              <>
+                <Line
+                  points={[
+                    wallStart.x,
+                    wallStart.y,
+                    previewPoint.x,
+                    previewPoint.y,
+                  ]}
+                  stroke="#39ff14"
+                  strokeWidth={5}
+                  dash={[14, 8]}
+                  lineCap="round"
+                  listening={false}
+                />
 
-              <Circle
-                x={wallStart.x}
-                y={wallStart.y}
-                radius={7}
-                fill="#39ff14"
-                listening={false}
-              />
+                <Circle
+                  x={wallStart.x}
+                  y={wallStart.y}
+                  radius={7}
+                  fill="#39ff14"
+                  listening={false}
+                />
 
-              <Circle
-                x={previewPoint.x}
-                y={previewPoint.y}
-                radius={7}
-                fill="#ffffff"
-                stroke="#39ff14"
-                strokeWidth={3}
-                listening={false}
-              />
+                <Circle
+                  x={previewPoint.x}
+                  y={previewPoint.y}
+                  radius={7}
+                  fill="#ffffff"
+                  stroke="#39ff14"
+                  strokeWidth={3}
+                  listening={false}
+                />
 
-              <MeasurementLabel
-                start={wallStart}
-                end={previewPoint}
-              />
-            </>
-          )}
+                <MeasurementLabel
+                  start={wallStart}
+                  end={previewPoint}
+                />
+              </>
+            )}
         </Layer>
       </Stage>
     </div>

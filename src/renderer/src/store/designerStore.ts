@@ -14,6 +14,11 @@ interface MoveOffset {
   y: number;
 }
 
+interface SceneSnapshot {
+  walls: Wall[];
+  cameras: Camera[];
+}
+
 interface DesignerState {
   tool: Tool;
 
@@ -28,10 +33,11 @@ interface DesignerState {
 
   cameras: Camera[];
 
-  past: Wall[][];
-  future: Wall[][];
+  past: SceneSnapshot[];
+  future: SceneSnapshot[];
 
-  wallEditSnapshot: Wall[] | null;
+  wallEditSnapshot: SceneSnapshot | null;
+  cameraEditSnapshot: SceneSnapshot | null;
 
   movingWallId: string | null;
   movingWallOffset: MoveOffset;
@@ -45,34 +51,38 @@ interface DesignerState {
 
   addWall: (wall: Wall) => void;
   selectWall: (id: string | null) => void;
-  deleteSelectedWall: () => void;
 
   beginWallEdit: () => void;
-
   updateWallEndpoint: (
     id: string,
     endpoint: WallEndpoint,
     point: Point,
   ) => void;
-
   finishWallEdit: () => void;
 
   beginWallMove: (id: string) => void;
-
   updateWallMoveOffset: (
     x: number,
     y: number,
   ) => void;
-
   finishWallMove: (
     id: string,
     offsetX: number,
     offsetY: number,
   ) => void;
-
   cancelWallMove: () => void;
 
   addCamera: (camera: Camera) => void;
+  selectCamera: (id: string | null) => void;
+  beginCameraMove: () => void;
+  updateCameraPosition: (
+    id: string,
+    point: Point,
+  ) => void;
+  finishCameraMove: () => void;
+
+  clearSelection: () => void;
+  deleteSelectedObject: () => void;
 
   undo: () => void;
   redo: () => void;
@@ -86,9 +96,28 @@ function cloneWalls(walls: Wall[]): Wall[] {
   }));
 }
 
-function wallsAreEqual(
-  first: Wall[],
-  second: Wall[],
+function cloneCameras(
+  cameras: Camera[],
+): Camera[] {
+  return cameras.map((camera) => ({
+    ...camera,
+    position: { ...camera.position },
+  }));
+}
+
+function createSnapshot(
+  walls: Wall[],
+  cameras: Camera[],
+): SceneSnapshot {
+  return {
+    walls: cloneWalls(walls),
+    cameras: cloneCameras(cameras),
+  };
+}
+
+function snapshotsAreEqual(
+  first: SceneSnapshot,
+  second: SceneSnapshot,
 ): boolean {
   return JSON.stringify(first) === JSON.stringify(second);
 }
@@ -112,6 +141,7 @@ export const useDesignerStore =
     future: [],
 
     wallEditSnapshot: null,
+    cameraEditSnapshot: null,
 
     movingWallId: null,
 
@@ -151,7 +181,10 @@ export const useDesignerStore =
       set((state) => ({
         past: [
           ...state.past,
-          cloneWalls(state.walls),
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          ),
         ],
 
         walls: [
@@ -168,32 +201,14 @@ export const useDesignerStore =
           ...wall,
           selected: wall.id === id,
         })),
+
+        cameras: state.cameras.map(
+          (camera) => ({
+            ...camera,
+            selected: false,
+          }),
+        ),
       })),
-
-    deleteSelectedWall: () =>
-      set((state) => {
-        const hasSelectedWall =
-          state.walls.some(
-            (wall) => wall.selected,
-          );
-
-        if (!hasSelectedWall) {
-          return state;
-        }
-
-        return {
-          past: [
-            ...state.past,
-            cloneWalls(state.walls),
-          ],
-
-          walls: state.walls.filter(
-            (wall) => !wall.selected,
-          ),
-
-          future: [],
-        };
-      }),
 
     beginWallEdit: () =>
       set((state) => {
@@ -202,9 +217,11 @@ export const useDesignerStore =
         }
 
         return {
-          wallEditSnapshot: cloneWalls(
-            state.walls,
-          ),
+          wallEditSnapshot:
+            createSnapshot(
+              state.walls,
+              state.cameras,
+            ),
         };
       }),
 
@@ -238,12 +255,18 @@ export const useDesignerStore =
           return state;
         }
 
-        const changed = !wallsAreEqual(
-          snapshot,
-          state.walls,
-        );
+        const current =
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          );
 
-        if (!changed) {
+        if (
+          snapshotsAreEqual(
+            snapshot,
+            current,
+          )
+        ) {
           return {
             wallEditSnapshot: null,
           };
@@ -252,11 +275,10 @@ export const useDesignerStore =
         return {
           past: [
             ...state.past,
-            cloneWalls(snapshot),
+            snapshot,
           ],
 
           future: [],
-
           wallEditSnapshot: null,
         };
       }),
@@ -272,7 +294,10 @@ export const useDesignerStore =
 
         wallEditSnapshot:
           state.wallEditSnapshot ??
-          cloneWalls(state.walls),
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          ),
       })),
 
     updateWallMoveOffset: (x, y) =>
@@ -302,13 +327,21 @@ export const useDesignerStore =
               ...wall,
 
               start: {
-                x: wall.start.x + moveX,
-                y: wall.start.y + moveY,
+                x:
+                  wall.start.x +
+                  moveX,
+                y:
+                  wall.start.y +
+                  moveY,
               },
 
               end: {
-                x: wall.end.x + moveX,
-                y: wall.end.y + moveY,
+                x:
+                  wall.end.x +
+                  moveX,
+                y:
+                  wall.end.y +
+                  moveY,
               },
             };
           });
@@ -323,7 +356,7 @@ export const useDesignerStore =
             changed && snapshot
               ? [
                   ...state.past,
-                  cloneWalls(snapshot),
+                  snapshot,
                 ]
               : state.past,
 
@@ -357,11 +390,167 @@ export const useDesignerStore =
 
     addCamera: (camera) =>
       set((state) => ({
+        past: [
+          ...state.past,
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          ),
+        ],
+
         cameras: [
           ...state.cameras,
           camera,
         ],
+
+        future: [],
       })),
+
+    selectCamera: (id) =>
+      set((state) => ({
+        walls: state.walls.map((wall) => ({
+          ...wall,
+          selected: false,
+        })),
+
+        cameras: state.cameras.map(
+          (camera) => ({
+            ...camera,
+            selected: camera.id === id,
+          }),
+        ),
+      })),
+
+    beginCameraMove: () =>
+      set((state) => {
+        if (state.cameraEditSnapshot) {
+          return state;
+        }
+
+        return {
+          cameraEditSnapshot:
+            createSnapshot(
+              state.walls,
+              state.cameras,
+            ),
+        };
+      }),
+
+    updateCameraPosition: (
+      id,
+      point,
+    ) =>
+      set((state) => ({
+        cameras: state.cameras.map(
+          (camera) => {
+            if (camera.id !== id) {
+              return camera;
+            }
+
+            return {
+              ...camera,
+              position: {
+                x: point.x,
+                y: point.y,
+              },
+            };
+          },
+        ),
+      })),
+
+    finishCameraMove: () =>
+      set((state) => {
+        const snapshot =
+          state.cameraEditSnapshot;
+
+        if (!snapshot) {
+          return state;
+        }
+
+        const current =
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          );
+
+        if (
+          snapshotsAreEqual(
+            snapshot,
+            current,
+          )
+        ) {
+          return {
+            cameraEditSnapshot: null,
+          };
+        }
+
+        return {
+          past: [
+            ...state.past,
+            snapshot,
+          ],
+
+          future: [],
+          cameraEditSnapshot: null,
+        };
+      }),
+
+    clearSelection: () =>
+      set((state) => ({
+        walls: state.walls.map((wall) => ({
+          ...wall,
+          selected: false,
+        })),
+
+        cameras: state.cameras.map(
+          (camera) => ({
+            ...camera,
+            selected: false,
+          }),
+        ),
+      })),
+
+    deleteSelectedObject: () =>
+      set((state) => {
+        const wallSelected =
+          state.walls.some(
+            (wall) => wall.selected,
+          );
+
+        const cameraSelected =
+          state.cameras.some(
+            (camera) => camera.selected,
+          );
+
+        if (
+          !wallSelected &&
+          !cameraSelected
+        ) {
+          return state;
+        }
+
+        return {
+          past: [
+            ...state.past,
+            createSnapshot(
+              state.walls,
+              state.cameras,
+            ),
+          ],
+
+          walls: state.walls.filter(
+            (wall) => !wall.selected,
+          ),
+
+          cameras:
+            state.cameras.filter(
+              (camera) =>
+                !camera.selected,
+            ),
+
+          future: [],
+        };
+      }),
 
     undo: () =>
       set((state) => {
@@ -369,23 +558,34 @@ export const useDesignerStore =
           return state;
         }
 
-        const previousWalls =
+        const previous =
           state.past[
             state.past.length - 1
           ];
 
         return {
-          walls: cloneWalls(previousWalls),
+          walls:
+            cloneWalls(previous.walls),
 
-          past: state.past.slice(0, -1),
+          cameras:
+            cloneCameras(
+              previous.cameras,
+            ),
+
+          past:
+            state.past.slice(0, -1),
 
           future: [
-            cloneWalls(state.walls),
+            createSnapshot(
+              state.walls,
+              state.cameras,
+            ),
             ...state.future,
           ],
 
           wallStart: null,
           wallEditSnapshot: null,
+          cameraEditSnapshot: null,
           movingWallId: null,
 
           movingWallOffset: {
@@ -397,25 +597,38 @@ export const useDesignerStore =
 
     redo: () =>
       set((state) => {
-        if (state.future.length === 0) {
+        if (
+          state.future.length === 0
+        ) {
           return state;
         }
 
-        const nextWalls =
+        const next =
           state.future[0];
 
         return {
-          walls: cloneWalls(nextWalls),
+          walls:
+            cloneWalls(next.walls),
+
+          cameras:
+            cloneCameras(
+              next.cameras,
+            ),
 
           past: [
             ...state.past,
-            cloneWalls(state.walls),
+            createSnapshot(
+              state.walls,
+              state.cameras,
+            ),
           ],
 
-          future: state.future.slice(1),
+          future:
+            state.future.slice(1),
 
           wallStart: null,
           wallEditSnapshot: null,
+          cameraEditSnapshot: null,
           movingWallId: null,
 
           movingWallOffset: {
