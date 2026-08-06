@@ -9,6 +9,17 @@ import type {
 
 type WallEndpoint = "start" | "end";
 
+type CameraPropertyChanges = Partial<
+  Pick<
+    Camera,
+    | "name"
+    | "position"
+    | "rotation"
+    | "fieldOfView"
+    | "range"
+  >
+>;
+
 interface MoveOffset {
   x: number;
   y: number;
@@ -52,23 +63,28 @@ interface DesignerState {
   selectWall: (id: string | null) => void;
 
   beginWallEdit: () => void;
+
   updateWallEndpoint: (
     id: string,
     endpoint: WallEndpoint,
     point: Point,
   ) => void;
+
   finishWallEdit: () => void;
 
   beginWallMove: (id: string) => void;
+
   updateWallMoveOffset: (
     x: number,
     y: number,
   ) => void;
+
   finishWallMove: (
     id: string,
     offsetX: number,
     offsetY: number,
   ) => void;
+
   cancelWallMove: () => void;
 
   addCamera: (camera: Camera) => void;
@@ -84,6 +100,11 @@ interface DesignerState {
   updateCameraRotation: (
     id: string,
     rotation: number,
+  ) => void;
+
+  updateCameraProperties: (
+    id: string,
+    changes: CameraPropertyChanges,
   ) => void;
 
   finishCameraEdit: () => void;
@@ -332,13 +353,21 @@ export const useDesignerStore =
               ...wall,
 
               start: {
-                x: wall.start.x + moveX,
-                y: wall.start.y + moveY,
+                x:
+                  wall.start.x +
+                  moveX,
+                y:
+                  wall.start.y +
+                  moveY,
               },
 
               end: {
-                x: wall.end.x + moveX,
-                y: wall.end.y + moveY,
+                x:
+                  wall.end.x +
+                  moveX,
+                y:
+                  wall.end.y +
+                  moveY,
               },
             };
           });
@@ -469,6 +498,32 @@ export const useDesignerStore =
             return {
               ...camera,
               rotation,
+            };
+          },
+        ),
+      })),
+
+    updateCameraProperties: (
+      id,
+      changes,
+    ) =>
+      set((state) => ({
+        cameras: state.cameras.map(
+          (camera) => {
+            if (camera.id !== id) {
+              return camera;
+            }
+
+            return {
+              ...camera,
+              ...changes,
+
+              position:
+                changes.position
+                  ? {
+                      ...changes.position,
+                    }
+                  : camera.position,
             };
           },
         ),
@@ -616,14 +671,17 @@ export const useDesignerStore =
           return state;
         }
 
-        const next = state.future[0];
+        const next =
+          state.future[0];
 
         return {
           walls:
             cloneWalls(next.walls),
 
           cameras:
-            cloneCameras(next.cameras),
+            cloneCameras(
+              next.cameras,
+            ),
 
           past: [
             ...state.past,
