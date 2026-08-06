@@ -8,6 +8,11 @@ import type {
 
 type WallEndpoint = "start" | "end";
 
+interface MoveOffset {
+  x: number;
+  y: number;
+}
+
 interface DesignerState {
   tool: Tool;
 
@@ -24,6 +29,9 @@ interface DesignerState {
   future: Wall[][];
 
   wallEditSnapshot: Wall[] | null;
+
+  movingWallId: string | null;
+  movingWallOffset: MoveOffset;
 
   setTool: (tool: Tool) => void;
   setZoom: (zoom: number) => void;
@@ -45,6 +53,15 @@ interface DesignerState {
   ) => void;
 
   finishWallEdit: () => void;
+
+  beginWallMove: (id: string) => void;
+  updateWallMoveOffset: (x: number, y: number) => void;
+  finishWallMove: (
+    id: string,
+    offsetX: number,
+    offsetY: number,
+  ) => void;
+  cancelWallMove: () => void;
 
   undo: () => void;
   redo: () => void;
@@ -82,6 +99,12 @@ export const useDesignerStore =
     future: [],
 
     wallEditSnapshot: null,
+
+    movingWallId: null,
+    movingWallOffset: {
+      x: 0,
+      y: 0,
+    },
 
     setTool: (tool) =>
       set({
@@ -224,6 +247,101 @@ export const useDesignerStore =
         };
       }),
 
+    beginWallMove: (id) =>
+      set((state) => ({
+        movingWallId: id,
+
+        movingWallOffset: {
+          x: 0,
+          y: 0,
+        },
+
+        wallEditSnapshot:
+          state.wallEditSnapshot ??
+          cloneWalls(state.walls),
+      })),
+
+    updateWallMoveOffset: (x, y) =>
+      set({
+        movingWallOffset: {
+          x,
+          y,
+        },
+      }),
+
+    finishWallMove: (
+      id,
+      moveX,
+      moveY,
+    ) =>
+      set((state) => {
+        const snapshot =
+          state.wallEditSnapshot;
+
+        const walls = state.walls.map(
+          (wall) => {
+            if (wall.id !== id) {
+              return wall;
+            }
+
+            return {
+              ...wall,
+
+              start: {
+                x: wall.start.x + moveX,
+                y: wall.start.y + moveY,
+              },
+
+              end: {
+                x: wall.end.x + moveX,
+                y: wall.end.y + moveY,
+              },
+            };
+          },
+        );
+
+        const changed =
+          moveX !== 0 || moveY !== 0;
+
+        return {
+          walls,
+
+          past:
+            changed && snapshot
+              ? [
+                  ...state.past,
+                  cloneWalls(snapshot),
+                ]
+              : state.past,
+
+          future:
+            changed
+              ? []
+              : state.future,
+
+          movingWallId: null,
+
+          movingWallOffset: {
+            x: 0,
+            y: 0,
+          },
+
+          wallEditSnapshot: null,
+        };
+      }),
+
+    cancelWallMove: () =>
+      set({
+        movingWallId: null,
+
+        movingWallOffset: {
+          x: 0,
+          y: 0,
+        },
+
+        wallEditSnapshot: null,
+      }),
+
     undo: () =>
       set((state) => {
         if (state.past.length === 0) {
@@ -247,6 +365,12 @@ export const useDesignerStore =
 
           wallStart: null,
           wallEditSnapshot: null,
+          movingWallId: null,
+
+          movingWallOffset: {
+            x: 0,
+            y: 0,
+          },
         };
       }),
 
@@ -271,6 +395,12 @@ export const useDesignerStore =
 
           wallStart: null,
           wallEditSnapshot: null,
+          movingWallId: null,
+
+          movingWallOffset: {
+            x: 0,
+            y: 0,
+          },
         };
       }),
   }));

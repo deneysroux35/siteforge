@@ -20,6 +20,16 @@ export default function SelectionLayer() {
       ),
     );
 
+  const movingWallId =
+    useDesignerStore(
+      (state) => state.movingWallId,
+    );
+
+  const movingWallOffset =
+    useDesignerStore(
+      (state) => state.movingWallOffset,
+    );
+
   const beginWallEdit =
     useDesignerStore(
       (state) => state.beginWallEdit,
@@ -39,6 +49,29 @@ export default function SelectionLayer() {
   if (!selectedWall) {
     return null;
   }
+
+  const wallIsMoving =
+    movingWallId === selectedWall.id;
+
+  const moveX = wallIsMoving
+    ? movingWallOffset.x
+    : 0;
+
+  const moveY = wallIsMoving
+    ? movingWallOffset.y
+    : 0;
+
+  const startX =
+    selectedWall.start.x + moveX;
+
+  const startY =
+    selectedWall.start.y + moveY;
+
+  const endX =
+    selectedWall.end.x + moveX;
+
+  const endY =
+    selectedWall.end.y + moveY;
 
   const handleDragStart = (
     event: KonvaEventObject<DragEvent>,
@@ -108,10 +141,10 @@ export default function SelectionLayer() {
     <>
       <Line
         points={[
-          selectedWall.start.x,
-          selectedWall.start.y,
-          selectedWall.end.x,
-          selectedWall.end.y,
+          startX,
+          startY,
+          endX,
+          endY,
         ]}
         stroke="#39ff14"
         strokeWidth={
@@ -122,41 +155,49 @@ export default function SelectionLayer() {
         listening={false}
       />
 
-      <Circle
-        x={selectedWall.start.x}
-        y={selectedWall.start.y}
-        radius={14}
-        fill="#39ff14"
-        stroke="#ffffff"
-        strokeWidth={4}
-        shadowColor="#39ff14"
-        shadowBlur={12}
-        draggable
-        onMouseDown={(event) => {
-          event.cancelBubble = true;
-        }}
-        onDragStart={handleDragStart}
-        onDragMove={handleStartDragMove}
-        onDragEnd={handleDragEnd}
-      />
+      {!wallIsMoving && (
+        <>
+          <Circle
+            x={selectedWall.start.x}
+            y={selectedWall.start.y}
+            radius={14}
+            fill="#39ff14"
+            stroke="#ffffff"
+            strokeWidth={4}
+            shadowColor="#39ff14"
+            shadowBlur={12}
+            draggable
+            onMouseDown={(event) => {
+              event.cancelBubble = true;
+            }}
+            onDragStart={handleDragStart}
+            onDragMove={
+              handleStartDragMove
+            }
+            onDragEnd={handleDragEnd}
+          />
 
-      <Circle
-        x={selectedWall.end.x}
-        y={selectedWall.end.y}
-        radius={14}
-        fill="#39ff14"
-        stroke="#ffffff"
-        strokeWidth={4}
-        shadowColor="#39ff14"
-        shadowBlur={12}
-        draggable
-        onMouseDown={(event) => {
-          event.cancelBubble = true;
-        }}
-        onDragStart={handleDragStart}
-        onDragMove={handleEndDragMove}
-        onDragEnd={handleDragEnd}
-      />
+          <Circle
+            x={selectedWall.end.x}
+            y={selectedWall.end.y}
+            radius={14}
+            fill="#39ff14"
+            stroke="#ffffff"
+            strokeWidth={4}
+            shadowColor="#39ff14"
+            shadowBlur={12}
+            draggable
+            onMouseDown={(event) => {
+              event.cancelBubble = true;
+            }}
+            onDragStart={handleDragStart}
+            onDragMove={
+              handleEndDragMove
+            }
+            onDragEnd={handleDragEnd}
+          />
+        </>
+      )}
     </>
   );
 }
