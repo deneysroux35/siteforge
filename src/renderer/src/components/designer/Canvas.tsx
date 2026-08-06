@@ -11,6 +11,7 @@ import type { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 
+import CameraLayer from "./layers/CameraLayer";
 import Grid from "./layers/Grid";
 import MeasurementLabel from "./layers/MeasurementLabel";
 import SelectionLayer from "./layers/SelectionLayer";
@@ -79,6 +80,10 @@ export default function Canvas() {
     (state) => state.addWall,
   );
 
+  const addCamera = useDesignerStore(
+    (state) => state.addCamera,
+  );
+
   const selectWall = useDesignerStore(
     (state) => state.selectWall,
   );
@@ -98,7 +103,9 @@ export default function Canvas() {
   useEffect(() => {
     const container = containerRef.current;
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const updateSize = () => {
       setSize({
@@ -146,7 +153,9 @@ export default function Canvas() {
         target?.tagName === "TEXTAREA" ||
         target?.isContentEditable;
 
-      if (isTyping) return;
+      if (isTyping) {
+        return;
+      }
 
       const modifierPressed =
         event.ctrlKey || event.metaKey;
@@ -221,7 +230,9 @@ export default function Canvas() {
       const pointer =
         stageRef.current?.getPointerPosition();
 
-      if (!pointer) return null;
+      if (!pointer) {
+        return null;
+      }
 
       return {
         x: pointer.x,
@@ -235,6 +246,7 @@ export default function Canvas() {
     x: snapToGrid(
       (pointer.x - offsetX) / zoom,
     ),
+
     y: snapToGrid(
       (pointer.y - offsetY) / zoom,
     ),
@@ -247,7 +259,9 @@ export default function Canvas() {
 
     const pointer = getScreenPointer();
 
-    if (!pointer) return;
+    if (!pointer) {
+      return;
+    }
 
     const worldPoint = {
       x: (pointer.x - offsetX) / zoom,
@@ -277,7 +291,9 @@ export default function Canvas() {
   ) => {
     const pointer = getScreenPointer();
 
-    if (!pointer) return;
+    if (!pointer) {
+      return;
+    }
 
     if (event.evt.button === 1) {
       event.evt.preventDefault();
@@ -306,6 +322,22 @@ export default function Canvas() {
       return;
     }
 
+    if (tool === "camera") {
+      const worldPoint = screenToWorld(pointer);
+
+      addCamera({
+        id: uuidv4(),
+        position: worldPoint,
+        rotation: 0,
+        selected: false,
+        name: "Camera",
+        fieldOfView: 90,
+        range: 20,
+      });
+
+      return;
+    }
+
     if (tool !== "wall") {
       return;
     }
@@ -323,7 +355,9 @@ export default function Canvas() {
       wallStart.x === worldPoint.x &&
       wallStart.y === worldPoint.y;
 
-    if (zeroLength) return;
+    if (zeroLength) {
+      return;
+    }
 
     addWall({
       id: uuidv4(),
@@ -342,7 +376,9 @@ export default function Canvas() {
   const handleMouseMove = () => {
     const pointer = getScreenPointer();
 
-    if (!pointer) return;
+    if (!pointer) {
+      return;
+    }
 
     if (
       isPanning &&
@@ -382,7 +418,9 @@ export default function Canvas() {
     ? "grabbing"
     : tool === "wall"
       ? "crosshair"
-      : "default";
+      : tool === "camera"
+        ? "copy"
+        : "default";
 
   return (
     <div
@@ -425,6 +463,8 @@ export default function Canvas() {
           <Grid gridSize={GRID_SIZE} />
 
           <WallLayer />
+
+          <CameraLayer />
 
           <SelectionLayer />
 

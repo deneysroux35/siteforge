@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type {
+  Camera,
   Point,
   Tool,
   Wall,
@@ -24,6 +25,8 @@ interface DesignerState {
 
   walls: Wall[];
   wallStart: Point | null;
+
+  cameras: Camera[];
 
   past: Wall[][];
   future: Wall[][];
@@ -55,13 +58,21 @@ interface DesignerState {
   finishWallEdit: () => void;
 
   beginWallMove: (id: string) => void;
-  updateWallMoveOffset: (x: number, y: number) => void;
+
+  updateWallMoveOffset: (
+    x: number,
+    y: number,
+  ) => void;
+
   finishWallMove: (
     id: string,
     offsetX: number,
     offsetY: number,
   ) => void;
+
   cancelWallMove: () => void;
+
+  addCamera: (camera: Camera) => void;
 
   undo: () => void;
   redo: () => void;
@@ -95,12 +106,15 @@ export const useDesignerStore =
     walls: [],
     wallStart: null,
 
+    cameras: [],
+
     past: [],
     future: [],
 
     wallEditSnapshot: null,
 
     movingWallId: null,
+
     movingWallOffset: {
       x: 0,
       y: 0,
@@ -278,8 +292,8 @@ export const useDesignerStore =
         const snapshot =
           state.wallEditSnapshot;
 
-        const walls = state.walls.map(
-          (wall) => {
+        const updatedWalls =
+          state.walls.map((wall) => {
             if (wall.id !== id) {
               return wall;
             }
@@ -297,14 +311,13 @@ export const useDesignerStore =
                 y: wall.end.y + moveY,
               },
             };
-          },
-        );
+          });
 
         const changed =
           moveX !== 0 || moveY !== 0;
 
         return {
-          walls,
+          walls: updatedWalls,
 
           past:
             changed && snapshot
@@ -341,6 +354,14 @@ export const useDesignerStore =
 
         wallEditSnapshot: null,
       }),
+
+    addCamera: (camera) =>
+      set((state) => ({
+        cameras: [
+          ...state.cameras,
+          camera,
+        ],
+      })),
 
     undo: () =>
       set((state) => {
