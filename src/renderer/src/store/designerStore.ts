@@ -30,7 +30,6 @@ interface DesignerState {
 
   walls: Wall[];
   wallStart: Point | null;
-
   cameras: Camera[];
 
   past: SceneSnapshot[];
@@ -74,12 +73,20 @@ interface DesignerState {
 
   addCamera: (camera: Camera) => void;
   selectCamera: (id: string | null) => void;
-  beginCameraMove: () => void;
+
+  beginCameraEdit: () => void;
+
   updateCameraPosition: (
     id: string,
     point: Point,
   ) => void;
-  finishCameraMove: () => void;
+
+  updateCameraRotation: (
+    id: string,
+    rotation: number,
+  ) => void;
+
+  finishCameraEdit: () => void;
 
   clearSelection: () => void;
   deleteSelectedObject: () => void;
@@ -134,7 +141,6 @@ export const useDesignerStore =
 
     walls: [],
     wallStart: null,
-
     cameras: [],
 
     past: [],
@@ -255,11 +261,10 @@ export const useDesignerStore =
           return state;
         }
 
-        const current =
-          createSnapshot(
-            state.walls,
-            state.cameras,
-          );
+        const current = createSnapshot(
+          state.walls,
+          state.cameras,
+        );
 
         if (
           snapshotsAreEqual(
@@ -327,21 +332,13 @@ export const useDesignerStore =
               ...wall,
 
               start: {
-                x:
-                  wall.start.x +
-                  moveX,
-                y:
-                  wall.start.y +
-                  moveY,
+                x: wall.start.x + moveX,
+                y: wall.start.y + moveY,
               },
 
               end: {
-                x:
-                  wall.end.x +
-                  moveX,
-                y:
-                  wall.end.y +
-                  moveY,
+                x: wall.end.x + moveX,
+                y: wall.end.y + moveY,
               },
             };
           });
@@ -421,7 +418,7 @@ export const useDesignerStore =
         ),
       })),
 
-    beginCameraMove: () =>
+    beginCameraEdit: () =>
       set((state) => {
         if (state.cameraEditSnapshot) {
           return state;
@@ -458,7 +455,26 @@ export const useDesignerStore =
         ),
       })),
 
-    finishCameraMove: () =>
+    updateCameraRotation: (
+      id,
+      rotation,
+    ) =>
+      set((state) => ({
+        cameras: state.cameras.map(
+          (camera) => {
+            if (camera.id !== id) {
+              return camera;
+            }
+
+            return {
+              ...camera,
+              rotation,
+            };
+          },
+        ),
+      })),
+
+    finishCameraEdit: () =>
       set((state) => {
         const snapshot =
           state.cameraEditSnapshot;
@@ -467,11 +483,10 @@ export const useDesignerStore =
           return state;
         }
 
-        const current =
-          createSnapshot(
-            state.walls,
-            state.cameras,
-          );
+        const current = createSnapshot(
+          state.walls,
+          state.cameras,
+        );
 
         if (
           snapshotsAreEqual(
@@ -512,19 +527,19 @@ export const useDesignerStore =
 
     deleteSelectedObject: () =>
       set((state) => {
-        const wallSelected =
+        const hasSelectedWall =
           state.walls.some(
             (wall) => wall.selected,
           );
 
-        const cameraSelected =
+        const hasSelectedCamera =
           state.cameras.some(
             (camera) => camera.selected,
           );
 
         if (
-          !wallSelected &&
-          !cameraSelected
+          !hasSelectedWall &&
+          !hasSelectedCamera
         ) {
           return state;
         }
@@ -597,23 +612,18 @@ export const useDesignerStore =
 
     redo: () =>
       set((state) => {
-        if (
-          state.future.length === 0
-        ) {
+        if (state.future.length === 0) {
           return state;
         }
 
-        const next =
-          state.future[0];
+        const next = state.future[0];
 
         return {
           walls:
             cloneWalls(next.walls),
 
           cameras:
-            cloneCameras(
-              next.cameras,
-            ),
+            cloneCameras(next.cameras),
 
           past: [
             ...state.past,
