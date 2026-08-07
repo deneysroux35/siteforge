@@ -1,58 +1,51 @@
 import type {
   Camera,
   Wall,
-} from "../components/designer/types";
+} from '../components/designer/types'
 
-export const SITEFORGE_PROJECT_VERSION = "0.7.1";
+import type {
+  ProjectMetadata,
+} from '../store/projectStore'
+
+export const SITEFORGE_PROJECT_VERSION =
+  '0.8.0'
 
 export const SITEFORGE_STORAGE_KEY =
-  "siteforge.currentProject";
+  'siteforge.currentProject'
 
-export interface SiteForgeProjectData {
-  format: "siteforge-project";
-  version: string;
+export interface SiteForgeViewport {
+  zoom: number
+  offsetX: number
+  offsetY: number
+}
 
-  project: {
-    id: string;
-    name: string;
+export interface SiteForgeProjectFile {
+  format: 'siteforge-project'
+  version: string
 
-    customerName: string;
-    siteAddress: string;
-
-    createdAt: string;
-    updatedAt: string;
-  };
+  project: ProjectMetadata
 
   drawing: {
-    walls: Wall[];
-    cameras: Camera[];
-
-    viewport: {
-      zoom: number;
-      offsetX: number;
-      offsetY: number;
-    };
-  };
+    walls: Wall[]
+    cameras: Camera[]
+    viewport: SiteForgeViewport
+  }
 }
 
-interface CreateProjectDataInput {
-  projectId?: string;
-  projectName?: string;
+interface CreateProjectFileInput {
+  project: ProjectMetadata
 
-  customerName?: string;
-  siteAddress?: string;
+  walls: Wall[]
+  cameras: Camera[]
 
-  createdAt?: string;
-
-  walls: Wall[];
-  cameras: Camera[];
-
-  zoom: number;
-  offsetX: number;
-  offsetY: number;
+  zoom: number
+  offsetX: number
+  offsetY: number
 }
 
-function cloneWalls(walls: Wall[]): Wall[] {
+function cloneWalls(
+  walls: Wall[],
+): Wall[] {
   return walls.map((wall) => ({
     ...wall,
 
@@ -65,7 +58,7 @@ function cloneWalls(walls: Wall[]): Wall[] {
     },
 
     selected: false,
-  }));
+  }))
 }
 
 function cloneCameras(
@@ -79,66 +72,45 @@ function cloneCameras(
     },
 
     selected: false,
-  }));
+  }))
 }
 
-function createProjectId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
+function cloneProjectMetadata(
+  project: ProjectMetadata,
+): ProjectMetadata {
+  return {
+    ...project,
   }
-
-  return `project-${Date.now()}-${Math.random()
-    .toString(16)
-    .slice(2)}`;
 }
 
-export function createProjectData({
-  projectId,
-  projectName = "Untitled Site",
-  customerName = "",
-  siteAddress = "",
-  createdAt,
-
+export function createProjectFile({
+  project,
   walls,
   cameras,
-
   zoom,
   offsetX,
   offsetY,
-}: CreateProjectDataInput): SiteForgeProjectData {
-  const timestamp = new Date().toISOString();
+}: CreateProjectFileInput): SiteForgeProjectFile {
+  const savedAt =
+    new Date().toISOString()
 
   return {
-    format: "siteforge-project",
+    format: 'siteforge-project',
 
-    version: SITEFORGE_PROJECT_VERSION,
+    version:
+      SITEFORGE_PROJECT_VERSION,
 
     project: {
-      id: projectId ?? createProjectId(),
-
-      name:
-        projectName.trim() ||
-        "Untitled Site",
-
-      customerName:
-        customerName.trim(),
-
-      siteAddress:
-        siteAddress.trim(),
-
-      createdAt:
-        createdAt ?? timestamp,
-
-      updatedAt: timestamp,
+      ...cloneProjectMetadata(project),
+      updatedAt: savedAt,
     },
 
     drawing: {
-      walls: cloneWalls(walls),
+      walls:
+        cloneWalls(walls),
 
-      cameras: cloneCameras(cameras),
+      cameras:
+        cloneCameras(cameras),
 
       viewport: {
         zoom,
@@ -146,207 +118,286 @@ export function createProjectData({
         offsetY,
       },
     },
-  };
+  }
 }
 
-export function validateProjectData(
+function isObject(
   value: unknown,
-): value is SiteForgeProjectData {
-  if (
-    typeof value !== "object" ||
-    value === null
-  ) {
-    return false;
+): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null
+  )
+}
+
+function isFiniteNumber(
+  value: unknown,
+): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value)
+  )
+}
+
+function isProjectMetadata(
+  value: unknown,
+): value is ProjectMetadata {
+  if (!isObject(value)) {
+    return false
   }
-
-  const projectData =
-    value as Partial<SiteForgeProjectData>;
-
-  if (
-    projectData.format !==
-    "siteforge-project"
-  ) {
-    return false;
-  }
-
-  if (
-    typeof projectData.version !==
-    "string"
-  ) {
-    return false;
-  }
-
-  if (
-    typeof projectData.project !==
-      "object" ||
-    projectData.project === null
-  ) {
-    return false;
-  }
-
-  if (
-    typeof projectData.drawing !==
-      "object" ||
-    projectData.drawing === null
-  ) {
-    return false;
-  }
-
-  const project =
-    projectData.project as Partial<
-      SiteForgeProjectData["project"]
-    >;
-
-  const drawing =
-    projectData.drawing as Partial<
-      SiteForgeProjectData["drawing"]
-    >;
-
-  if (
-    typeof project.id !== "string" ||
-    typeof project.name !== "string" ||
-    typeof project.createdAt !==
-      "string" ||
-    typeof project.updatedAt !==
-      "string"
-  ) {
-    return false;
-  }
-
-  if (
-    !Array.isArray(drawing.walls) ||
-    !Array.isArray(drawing.cameras)
-  ) {
-    return false;
-  }
-
-  if (
-    typeof drawing.viewport !==
-      "object" ||
-    drawing.viewport === null
-  ) {
-    return false;
-  }
-
-  const viewport =
-    drawing.viewport as Partial<
-      SiteForgeProjectData["drawing"]["viewport"]
-    >;
 
   return (
-    typeof viewport.zoom === "number" &&
-    typeof viewport.offsetX ===
-      "number" &&
-    typeof viewport.offsetY ===
-      "number"
-  );
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.customerName ===
+      'string' &&
+    typeof value.siteAddress ===
+      'string' &&
+    typeof value.designerName ===
+      'string' &&
+    typeof value.revision ===
+      'string' &&
+    typeof value.createdAt ===
+      'string' &&
+    typeof value.updatedAt ===
+      'string'
+  )
+}
+
+function isViewport(
+  value: unknown,
+): value is SiteForgeViewport {
+  if (!isObject(value)) {
+    return false
+  }
+
+  return (
+    isFiniteNumber(value.zoom) &&
+    isFiniteNumber(value.offsetX) &&
+    isFiniteNumber(value.offsetY)
+  )
+}
+
+export function validateProjectFile(
+  value: unknown,
+): value is SiteForgeProjectFile {
+  if (!isObject(value)) {
+    return false
+  }
+
+  if (
+    value.format !==
+    'siteforge-project'
+  ) {
+    return false
+  }
+
+  if (
+    typeof value.version !==
+    'string'
+  ) {
+    return false
+  }
+
+  if (
+    !isProjectMetadata(
+      value.project,
+    )
+  ) {
+    return false
+  }
+
+  if (
+    !isObject(value.drawing)
+  ) {
+    return false
+  }
+
+  if (
+    !Array.isArray(
+      value.drawing.walls,
+    )
+  ) {
+    return false
+  }
+
+  if (
+    !Array.isArray(
+      value.drawing.cameras,
+    )
+  ) {
+    return false
+  }
+
+  if (
+    !isViewport(
+      value.drawing.viewport,
+    )
+  ) {
+    return false
+  }
+
+  return true
+}
+
+export function serializeProjectFile(
+  projectFile: SiteForgeProjectFile,
+): string {
+  return JSON.stringify(
+    projectFile,
+    null,
+    2,
+  )
+}
+
+export function parseProjectFile(
+  json: string,
+): SiteForgeProjectFile {
+  let parsed: unknown
+
+  try {
+    parsed = JSON.parse(json)
+  } catch {
+    throw new Error(
+      'The selected file does not contain valid SiteForge project data.',
+    )
+  }
+
+  if (
+    !validateProjectFile(parsed)
+  ) {
+    throw new Error(
+      'The selected file is not a valid SiteForge project.',
+    )
+  }
+
+  return parsed
 }
 
 export function saveProjectLocally(
-  projectData: SiteForgeProjectData,
+  projectFile: SiteForgeProjectFile,
 ): void {
   const serialized =
-    JSON.stringify(projectData);
+    serializeProjectFile(
+      projectFile,
+    )
 
   localStorage.setItem(
     SITEFORGE_STORAGE_KEY,
     serialized,
-  );
+  )
 }
 
 export function loadProjectLocally():
-  | SiteForgeProjectData
+  | SiteForgeProjectFile
   | null {
   const serialized =
     localStorage.getItem(
       SITEFORGE_STORAGE_KEY,
-    );
+    )
 
   if (!serialized) {
-    return null;
+    return null
   }
 
   try {
-    const parsed: unknown =
-      JSON.parse(serialized);
-
-    if (!validateProjectData(parsed)) {
-      console.error(
-        "Stored SiteForge project is invalid.",
-      );
-
-      return null;
-    }
-
-    return parsed;
+    return parseProjectFile(
+      serialized,
+    )
   } catch (error) {
     console.error(
-      "Could not read stored SiteForge project.",
+      'Unable to load the saved SiteForge project.',
       error,
-    );
+    )
 
-    return null;
+    return null
   }
 }
 
-export function deleteLocalProject(): void {
-  localStorage.removeItem(
-    SITEFORGE_STORAGE_KEY,
-  );
-}
-
-export function projectExistsLocally(): boolean {
+export function hasSavedProject(): boolean {
   return (
     localStorage.getItem(
       SITEFORGE_STORAGE_KEY,
     ) !== null
-  );
+  )
 }
 
-export function exportProjectAsJson(
-  projectData: SiteForgeProjectData,
-): string {
-  return JSON.stringify(
-    projectData,
-    null,
-    2,
-  );
+export function removeSavedProject(): void {
+  localStorage.removeItem(
+    SITEFORGE_STORAGE_KEY,
+  )
 }
 
-export function importProjectFromJson(
-  json: string,
-): SiteForgeProjectData {
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(json);
-  } catch {
-    throw new Error(
-      "The selected file does not contain valid JSON.",
-    );
-  }
-
-  if (!validateProjectData(parsed)) {
-    throw new Error(
-      "The selected file is not a valid SiteForge project.",
-    );
-  }
-
-  return parsed;
-}
-
-export function createSafeFilename(
+export function createSafeProjectFilename(
   projectName: string,
 ): string {
-  const safeName = projectName
-    .trim()
-    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toLowerCase();
+  const safeName =
+    projectName
+      .trim()
+      .replace(
+        /[<>:"/\\|?*\u0000-\u001f]/g,
+        '',
+      )
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase()
 
   return `${
-    safeName || "siteforge-project"
-  }.siteforge`;
+    safeName ||
+    'siteforge-project'
+  }.siteforge`
+}
+
+export function downloadProjectFile(
+  projectFile: SiteForgeProjectFile,
+): void {
+  const serialized =
+    serializeProjectFile(
+      projectFile,
+    )
+
+  const blob =
+    new Blob(
+      [serialized],
+      {
+        type:
+          'application/json;charset=utf-8',
+      },
+    )
+
+  const objectUrl =
+    URL.createObjectURL(blob)
+
+  const link =
+    document.createElement('a')
+
+  link.href =
+    objectUrl
+
+  link.download =
+    createSafeProjectFilename(
+      projectFile.project.name,
+    )
+
+  document.body.appendChild(link)
+
+  link.click()
+
+  document.body.removeChild(link)
+
+  URL.revokeObjectURL(
+    objectUrl,
+  )
+}
+
+export async function readProjectFile(
+  file: File,
+): Promise<SiteForgeProjectFile> {
+  const text =
+    await file.text()
+
+  return parseProjectFile(
+    text,
+  )
 }

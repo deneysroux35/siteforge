@@ -10,42 +10,50 @@ import {
   Settings,
   Square,
   Undo2,
-} from "lucide-react";
+} from 'lucide-react'
 
 import type {
   CSSProperties,
+  JSX,
   MouseEvent,
-} from "react";
+  ReactNode,
+} from 'react'
 
-import { useDesignerStore } from "../../store/designerStore";
+import {
+  openProjectPicker,
+  saveCurrentProject,
+} from '../../services/projectCommands'
+
+import { useDesignerStore } from '../../store/designerStore'
+import { useProjectStore } from '../../store/projectStore'
 
 interface RibbonButtonProps {
-  label: string;
-  shortcut?: string;
-  icon: typeof Save;
-  active?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
+  label: string
+  shortcut?: string
+  icon: typeof Save
+  active?: boolean
+  disabled?: boolean
+  onClick: () => void
 }
 
 const ribbonButtonBase: CSSProperties = {
   minWidth: 66,
   height: 54,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   gap: 4,
-  padding: "5px 10px",
+  padding: '5px 10px',
   borderRadius: 7,
-  border: "1px solid transparent",
-  fontFamily: "Segoe UI, sans-serif",
+  border: '1px solid transparent',
+  fontFamily: 'Segoe UI, sans-serif',
   fontSize: 11,
   fontWeight: 600,
-  cursor: "pointer",
+  cursor: 'pointer',
   transition:
-    "background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease",
-};
+    'background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease',
+}
 
 function RibbonButton({
   label,
@@ -54,40 +62,30 @@ function RibbonButton({
   active = false,
   disabled = false,
   onClick,
-}: RibbonButtonProps) {
-  const handleMouseEnter = (
+}: RibbonButtonProps): JSX.Element {
+  function handleMouseEnter(
     event: MouseEvent<HTMLButtonElement>,
-  ) => {
+  ): void {
     if (disabled || active) {
-      return;
+      return
     }
 
-    event.currentTarget.style.background =
-      "#272d37";
+    event.currentTarget.style.background = '#272d37'
+    event.currentTarget.style.borderColor = '#46505f'
+    event.currentTarget.style.transform = 'translateY(-1px)'
+  }
 
-    event.currentTarget.style.borderColor =
-      "#46505f";
-
-    event.currentTarget.style.transform =
-      "translateY(-1px)";
-  };
-
-  const handleMouseLeave = (
+  function handleMouseLeave(
     event: MouseEvent<HTMLButtonElement>,
-  ) => {
+  ): void {
     if (disabled || active) {
-      return;
+      return
     }
 
-    event.currentTarget.style.background =
-      "transparent";
-
-    event.currentTarget.style.borderColor =
-      "transparent";
-
-    event.currentTarget.style.transform =
-      "translateY(0)";
-  };
+    event.currentTarget.style.background = 'transparent'
+    event.currentTarget.style.borderColor = 'transparent'
+    event.currentTarget.style.transform = 'translateY(0)'
+  }
 
   return (
     <button
@@ -105,28 +103,30 @@ function RibbonButton({
         ...ribbonButtonBase,
 
         background: active
-          ? "linear-gradient(180deg, #39ff14, #23d80c)"
-          : "transparent",
+          ? 'linear-gradient(180deg, #39ff14, #23d80c)'
+          : 'transparent',
 
         color: disabled
-          ? "#555d68"
+          ? '#555d68'
           : active
-            ? "#071007"
-            : "#b7bec8",
+            ? '#071007'
+            : '#b7bec8',
 
         borderColor: active
-          ? "#6dff55"
-          : "transparent",
+          ? '#6dff55'
+          : 'transparent',
 
         boxShadow: active
-          ? "0 0 18px rgba(57, 255, 20, 0.25)"
-          : "none",
+          ? '0 0 18px rgba(57,255,20,.25)'
+          : 'none',
 
         cursor: disabled
-          ? "not-allowed"
-          : "pointer",
+          ? 'not-allowed'
+          : 'pointer',
 
-        opacity: disabled ? 0.55 : 1,
+        opacity: disabled
+          ? 0.55
+          : 1,
       }}
     >
       <Icon
@@ -137,52 +137,53 @@ function RibbonButton({
       <span
         style={{
           lineHeight: 1,
-          whiteSpace: "nowrap",
+          whiteSpace: 'nowrap',
         }}
       >
         {label}
       </span>
     </button>
-  );
+  )
 }
 
-function RibbonDivider() {
+function RibbonDivider(): JSX.Element {
   return (
     <div
       style={{
         width: 1,
         height: 48,
-        margin: "0 5px",
+        margin: '0 5px',
         background:
-          "linear-gradient(180deg, transparent, #343b47, transparent)",
+          'linear-gradient(180deg, transparent, #343b47, transparent)',
       }}
     />
-  );
+  )
+}
+
+interface RibbonGroupProps {
+  title: string
+  children: ReactNode
 }
 
 function RibbonGroup({
   title,
   children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+}: RibbonGroupProps): JSX.Element {
   return (
     <section
       style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent:
-          "space-between",
-        padding: "5px 4px 3px",
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '5px 4px 3px',
       }}
     >
       <div
         style={{
           flex: 1,
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           gap: 2,
         }}
       >
@@ -192,94 +193,135 @@ function RibbonGroup({
       <div
         style={{
           height: 14,
-          color: "#68717d",
+          color: '#68717d',
           fontSize: 9,
           fontWeight: 700,
           letterSpacing: 0.7,
-          textAlign: "center",
-          textTransform: "uppercase",
+          textAlign: 'center',
+          textTransform: 'uppercase',
         }}
       >
         {title}
       </div>
     </section>
-  );
+  )
 }
 
-export default function TopBar() {
-  const tool = useDesignerStore(
-    (state) => state.tool,
-  );
+export default function TopBar(): JSX.Element {
+  const tool =
+    useDesignerStore(
+      (state) => state.tool,
+    )
 
-  const setTool = useDesignerStore(
-    (state) => state.setTool,
-  );
+  const setTool =
+    useDesignerStore(
+      (state) => state.setTool,
+    )
 
-  const undo = useDesignerStore(
-    (state) => state.undo,
-  );
+  const undo =
+    useDesignerStore(
+      (state) => state.undo,
+    )
 
-  const redo = useDesignerStore(
-    (state) => state.redo,
-  );
+  const redo =
+    useDesignerStore(
+      (state) => state.redo,
+    )
 
-  const pastCount = useDesignerStore(
-    (state) => state.past.length,
-  );
+  const pastCount =
+    useDesignerStore(
+      (state) => state.past.length,
+    )
 
   const futureCount =
     useDesignerStore(
       (state) => state.future.length,
-    );
+    )
 
-  const walls = useDesignerStore(
-    (state) => state.walls,
-  );
+  const walls =
+    useDesignerStore(
+      (state) => state.walls,
+    )
 
-  const cameras = useDesignerStore(
-    (state) => state.cameras,
-  );
+  const cameras =
+    useDesignerStore(
+      (state) => state.cameras,
+    )
 
-  const handleNotReady = (
+  const project =
+    useProjectStore(
+      (state) => state.project,
+    )
+
+  const isDirty =
+    useProjectStore(
+      (state) => state.isDirty,
+    )
+
+  function handleSave(): void {
+    try {
+      saveCurrentProject(true)
+    } catch (error) {
+      console.error(
+        'Unable to save SiteForge project.',
+        error,
+      )
+
+      window.alert(
+        'SiteForge could not save the project.',
+      )
+    }
+  }
+
+  function handleOpen(): void {
+    try {
+      openProjectPicker()
+    } catch (error) {
+      console.error(
+        'Unable to open SiteForge project.',
+        error,
+      )
+
+      window.alert(
+        'SiteForge could not open the project.',
+      )
+    }
+  }
+
+  function handleNotReady(
     feature: string,
-  ) => {
+  ): void {
     window.alert(
-      `${feature} will be connected in the next SiteForge sprint.`,
-    );
-  };
+      `${feature} will be connected next.`,
+    )
+  }
 
   return (
     <header
       style={{
         flexShrink: 0,
-        background: "#171a21",
-        borderBottom:
-          "1px solid #343b47",
-        color: "#ffffff",
-        fontFamily:
-          "Segoe UI, sans-serif",
-        userSelect: "none",
+        background: '#171a21',
+        borderBottom: '1px solid #343b47',
+        color: '#ffffff',
+        fontFamily: 'Segoe UI, sans-serif',
+        userSelect: 'none',
       }}
     >
-      {/* Application title row */}
-
       <div
         style={{
           height: 42,
-          display: "flex",
-          alignItems: "center",
-          justifyContent:
-            "space-between",
-          padding: "0 15px",
-          background: "#111419",
-          borderBottom:
-            "1px solid #282e38",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 15px',
+          background: '#111419',
+          borderBottom: '1px solid #282e38',
         }}
       >
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             gap: 12,
           }}
         >
@@ -287,16 +329,16 @@ export default function TopBar() {
             style={{
               width: 28,
               height: 28,
-              display: "grid",
-              placeItems: "center",
+              display: 'grid',
+              placeItems: 'center',
               borderRadius: 7,
               background:
-                "linear-gradient(135deg, #39ff14, #11a500)",
-              color: "#071007",
+                'linear-gradient(135deg, #39ff14, #11a500)',
+              color: '#071007',
               fontSize: 14,
               fontWeight: 900,
               boxShadow:
-                "0 0 18px rgba(57, 255, 20, 0.22)",
+                '0 0 18px rgba(57,255,20,.22)',
             }}
           >
             SF
@@ -305,7 +347,7 @@ export default function TopBar() {
           <div>
             <div
               style={{
-                color: "#ffffff",
+                color: '#ffffff',
                 fontSize: 14,
                 fontWeight: 800,
                 letterSpacing: 0.5,
@@ -317,12 +359,11 @@ export default function TopBar() {
             <div
               style={{
                 marginTop: 1,
-                color: "#68717d",
+                color: '#68717d',
                 fontSize: 9,
                 fontWeight: 700,
                 letterSpacing: 1,
-                textTransform:
-                  "uppercase",
+                textTransform: 'uppercase',
               }}
             >
               CCTV Design Workspace
@@ -332,24 +373,24 @@ export default function TopBar() {
 
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             gap: 18,
           }}
         >
           <div
             style={{
-              display: "flex",
+              display: 'flex',
               gap: 14,
-              color: "#8c96a3",
+              color: '#8c96a3',
               fontSize: 11,
             }}
           >
             <span>
-              Walls{" "}
+              Walls{' '}
               <strong
                 style={{
-                  color: "#ffd54f",
+                  color: '#ffd54f',
                 }}
               >
                 {walls.length}
@@ -357,10 +398,10 @@ export default function TopBar() {
             </span>
 
             <span>
-              Cameras{" "}
+              Cameras{' '}
               <strong
                 style={{
-                  color: "#39ff14",
+                  color: '#39ff14',
                 }}
               >
                 {cameras.length}
@@ -370,39 +411,38 @@ export default function TopBar() {
 
           <div
             style={{
-              padding: "6px 10px",
-              border:
-                "1px solid #343b47",
+              padding: '6px 10px',
+              border: '1px solid #343b47',
               borderRadius: 6,
-              background: "#1b1f26",
-              color: "#b7bec8",
+              background: '#1b1f26',
+              color: '#b7bec8',
               fontSize: 11,
             }}
           >
-            Project:{" "}
+            Project:{' '}
+
             <strong
               style={{
-                color: "#ffffff",
+                color: '#ffffff',
               }}
             >
-              Untitled Site
+              {project.name}
+              {isDirty ? ' *' : ''}
             </strong>
           </div>
         </div>
       </div>
 
-      {/* Command ribbon */}
-
       <div
         style={{
           height: 82,
-          display: "flex",
-          alignItems: "stretch",
-          overflowX: "auto",
-          overflowY: "hidden",
-          padding: "0 8px",
+          display: 'flex',
+          alignItems: 'stretch',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          padding: '0 8px',
           background:
-            "linear-gradient(180deg, #1b1f26, #171a21)",
+            'linear-gradient(180deg, #1b1f26, #171a21)',
         }}
       >
         <RibbonGroup title="Project">
@@ -410,22 +450,14 @@ export default function TopBar() {
             label="Save"
             shortcut="Ctrl+S"
             icon={Save}
-            onClick={() =>
-              handleNotReady(
-                "Project saving",
-              )
-            }
+            onClick={handleSave}
           />
 
           <RibbonButton
             label="Open"
             shortcut="Ctrl+O"
             icon={FolderOpen}
-            onClick={() =>
-              handleNotReady(
-                "Project opening",
-              )
-            }
+            onClick={handleOpen}
           />
         </RibbonGroup>
 
@@ -456,31 +488,31 @@ export default function TopBar() {
             label="Wall"
             shortcut="W"
             icon={Square}
-            active={tool === "wall"}
-            onClick={() =>
-              setTool("wall")
-            }
+            active={tool === 'wall'}
+            onClick={(): void => {
+              setTool('wall')
+            }}
           />
 
           <RibbonButton
             label="Door"
             shortcut="D"
             icon={DoorOpen}
-            active={tool === "door"}
-            onClick={() =>
-              setTool("door")
-            }
+            active={tool === 'door'}
+            onClick={(): void => {
+              setTool('door')
+            }}
           />
 
           <RibbonButton
             label="Measure"
             shortcut="M"
             icon={Ruler}
-            onClick={() =>
+            onClick={(): void => {
               handleNotReady(
-                "Measurement tools",
+                'Measurement tools',
               )
-            }
+            }}
           />
         </RibbonGroup>
 
@@ -491,10 +523,10 @@ export default function TopBar() {
             label="Camera"
             shortcut="C"
             icon={Camera}
-            active={tool === "camera"}
-            onClick={() =>
-              setTool("camera")
-            }
+            active={tool === 'camera'}
+            onClick={(): void => {
+              setTool('camera')
+            }}
           />
         </RibbonGroup>
 
@@ -504,21 +536,21 @@ export default function TopBar() {
           <RibbonButton
             label="Quote"
             icon={FileText}
-            onClick={() =>
+            onClick={(): void => {
               handleNotReady(
-                "Quote generation",
+                'Quote generation',
               )
-            }
+            }}
           />
 
           <RibbonButton
             label="Reports"
             icon={BarChart3}
-            onClick={() =>
+            onClick={(): void => {
               handleNotReady(
-                "Reporting",
+                'Reporting',
               )
-            }
+            }}
           />
         </RibbonGroup>
 
@@ -528,14 +560,14 @@ export default function TopBar() {
           <RibbonButton
             label="Settings"
             icon={Settings}
-            onClick={() =>
+            onClick={(): void => {
               handleNotReady(
-                "Application settings",
+                'Application settings',
               )
-            }
+            }}
           />
         </RibbonGroup>
       </div>
     </header>
-  );
+  )
 }

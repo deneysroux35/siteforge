@@ -37,6 +37,15 @@ interface SceneSnapshot {
   cameras: Camera[]
 }
 
+interface LoadProjectSceneInput {
+  walls: Wall[]
+  cameras: Camera[]
+
+  zoom: number
+  offsetX: number
+  offsetY: number
+}
+
 interface DesignerState {
   tool: Tool
 
@@ -147,6 +156,10 @@ interface DesignerState {
   ) => void
 
   deleteSelectedObject: () => void
+
+  loadProjectScene: (
+    scene: LoadProjectSceneInput,
+  ) => void
 
   undo: () => void
   redo: () => void
@@ -474,6 +487,7 @@ export const useDesignerStore =
         walls: state.walls.map(
           (wall) => ({
             ...wall,
+
             selected:
               wall.id === id,
           }),
@@ -665,7 +679,8 @@ export const useDesignerStore =
               ? []
               : state.future,
 
-          movingWallId: null,
+          movingWallId:
+            null,
 
           movingWallOffset: {
             x: 0,
@@ -686,7 +701,8 @@ export const useDesignerStore =
           y: 0,
         },
 
-        wallEditSnapshot: null,
+        wallEditSnapshot:
+          null,
       }),
 
     addCamera: (camera): void =>
@@ -722,6 +738,7 @@ export const useDesignerStore =
           state.cameras.map(
             (camera) => ({
               ...camera,
+
               selected:
                 camera.id === id,
             }),
@@ -975,6 +992,72 @@ export const useDesignerStore =
         }
       }),
 
+    /*
+     * Used by Open Project.
+     *
+     * This intentionally clears all temporary
+     * editing and undo/redo state so the newly
+     * opened project starts with a clean history.
+     */
+    loadProjectScene: (
+      scene,
+    ): void =>
+      set({
+        tool: 'select',
+
+        zoom:
+          scene.zoom,
+
+        offsetX:
+          scene.offsetX,
+
+        offsetY:
+          scene.offsetY,
+
+        isPanning:
+          false,
+
+        walls:
+          cloneWalls(
+            scene.walls,
+          ).map(
+            (wall) => ({
+              ...wall,
+              selected: false,
+            }),
+          ),
+
+        cameras:
+          cloneCameras(
+            scene.cameras,
+          ).map(
+            (camera) => ({
+              ...camera,
+              selected: false,
+            }),
+          ),
+
+        wallStart:
+          null,
+
+        past: [],
+        future: [],
+
+        wallEditSnapshot:
+          null,
+
+        cameraEditSnapshot:
+          null,
+
+        movingWallId:
+          null,
+
+        movingWallOffset: {
+          x: 0,
+          y: 0,
+        },
+      }),
+
     undo: (): void =>
       set((state) => {
         if (
@@ -1014,7 +1097,8 @@ export const useDesignerStore =
             ...state.future,
           ],
 
-          wallStart: null,
+          wallStart:
+            null,
 
           wallEditSnapshot:
             null,
@@ -1022,7 +1106,8 @@ export const useDesignerStore =
           cameraEditSnapshot:
             null,
 
-          movingWallId: null,
+          movingWallId:
+            null,
 
           movingWallOffset: {
             x: 0,
@@ -1068,7 +1153,8 @@ export const useDesignerStore =
               1,
             ),
 
-          wallStart: null,
+          wallStart:
+            null,
 
           wallEditSnapshot:
             null,
@@ -1076,7 +1162,8 @@ export const useDesignerStore =
           cameraEditSnapshot:
             null,
 
-          movingWallId: null,
+          movingWallId:
+            null,
 
           movingWallOffset: {
             x: 0,

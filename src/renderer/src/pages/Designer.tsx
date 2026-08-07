@@ -1,4 +1,8 @@
-import { useEffect, useState, type JSX } from 'react'
+import {
+  useEffect,
+  useState,
+  type JSX,
+} from 'react'
 
 import Properties from '../components/designer/Properties'
 import Toolbar from '../components/designer/Toolbar'
@@ -8,44 +12,137 @@ import CommandPalette from '../components/layout/CommandPalette'
 import StatusBar from '../components/layout/StatusBar'
 import TopBar from '../components/layout/TopBar'
 
+import NewProjectDialog from '../components/project/NewProjectDialog'
+
+import { useDesignerStore } from '../store/designerStore'
+import { useProjectStore } from '../store/projectStore'
+
 export default function Designer(): JSX.Element {
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [
+    commandPaletteOpen,
+    setCommandPaletteOpen,
+  ] = useState(false)
 
-  useEffect((): (() => void) => {
-    function handleKeyDown(event: KeyboardEvent): void {
-      const target = event.target as HTMLElement | null
+  const [
+    newProjectOpen,
+    setNewProjectOpen,
+  ] = useState(false)
 
-      const isTyping =
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable
+  const project =
+    useProjectStore(
+      (state) =>
+        state.project,
+    )
 
-      const commandShortcut =
-        (event.ctrlKey || event.metaKey) &&
-        event.key.toLowerCase() === 'k'
+  const isDirty =
+    useProjectStore(
+      (state) =>
+        state.isDirty,
+    )
 
-      const alternateShortcut =
-        (event.ctrlKey || event.metaKey) &&
-        event.shiftKey &&
-        event.key.toLowerCase() === 'p'
+  const clearSelection =
+    useDesignerStore(
+      (state) =>
+        state.clearSelection,
+    )
 
-      if (commandShortcut || alternateShortcut) {
-        event.preventDefault()
-        setCommandPaletteOpen((current) => !current)
-        return
+  useEffect(
+    (): (() => void) => {
+      function handleKeyDown(
+        event: KeyboardEvent,
+      ): void {
+        const target =
+          event.target as
+            | HTMLElement
+            | null
+
+        const isTyping =
+          target?.tagName ===
+            'INPUT' ||
+          target?.tagName ===
+            'TEXTAREA' ||
+          target?.isContentEditable
+
+        const commandShortcut =
+          (event.ctrlKey ||
+            event.metaKey) &&
+          event.key.toLowerCase() ===
+            'k'
+
+        const alternateShortcut =
+          (event.ctrlKey ||
+            event.metaKey) &&
+          event.shiftKey &&
+          event.key.toLowerCase() ===
+            'p'
+
+        const newProjectShortcut =
+          (event.ctrlKey ||
+            event.metaKey) &&
+          event.key.toLowerCase() ===
+            'n'
+
+        if (
+          commandShortcut ||
+          alternateShortcut
+        ) {
+          event.preventDefault()
+
+          setCommandPaletteOpen(
+            (current) =>
+              !current,
+          )
+
+          return
+        }
+
+        if (
+          newProjectShortcut &&
+          !isTyping
+        ) {
+          event.preventDefault()
+
+          setNewProjectOpen(true)
+
+          return
+        }
+
+        if (
+          event.key === 'Escape' &&
+          !isTyping
+        ) {
+          setCommandPaletteOpen(false)
+          setNewProjectOpen(false)
+        }
       }
 
-      if (event.key === 'Escape' && !isTyping) {
-        setCommandPaletteOpen(false)
+      window.addEventListener(
+        'keydown',
+        handleKeyDown,
+      )
+
+      return (): void => {
+        window.removeEventListener(
+          'keydown',
+          handleKeyDown,
+        )
       }
-    }
+    },
+    [],
+  )
 
-    window.addEventListener('keydown', handleKeyDown)
+  useEffect((): void => {
+    document.title = `${project.name}${
+      isDirty ? ' *' : ''
+    } - SiteForge`
+  }, [
+    project.name,
+    isDirty,
+  ])
 
-    return (): void => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [])
+  function handleProjectCreated(): void {
+    clearSelection()
+  }
 
   return (
     <div
@@ -94,6 +191,14 @@ export default function Designer(): JSX.Element {
         onClose={(): void => {
           setCommandPaletteOpen(false)
         }}
+      />
+
+      <NewProjectDialog
+        open={newProjectOpen}
+        onClose={(): void => {
+          setNewProjectOpen(false)
+        }}
+        onCreated={handleProjectCreated}
       />
     </div>
   )
