@@ -1,127 +1,171 @@
-import { create } from "zustand";
+import { create } from 'zustand'
 
 import type {
   Camera,
   Point,
   Tool,
   Wall,
-} from "../components/designer/types";
+} from '../components/designer/types'
 
-type WallEndpoint = "start" | "end";
+type WallEndpoint = 'start' | 'end'
 
 type CameraPropertyChanges = Partial<
   Pick<
     Camera,
-    | "name"
-    | "position"
-    | "rotation"
-    | "fieldOfView"
-    | "range"
+    | 'name'
+    | 'position'
+    | 'rotation'
+    | 'fieldOfView'
+    | 'range'
   >
->;
+>
 
 interface MoveOffset {
-  x: number;
-  y: number;
+  x: number
+  y: number
+}
+
+interface SelectionBounds {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
 }
 
 interface SceneSnapshot {
-  walls: Wall[];
-  cameras: Camera[];
+  walls: Wall[]
+  cameras: Camera[]
 }
 
 interface DesignerState {
-  tool: Tool;
+  tool: Tool
 
-  zoom: number;
-  offsetX: number;
-  offsetY: number;
+  zoom: number
+  offsetX: number
+  offsetY: number
 
-  isPanning: boolean;
+  isPanning: boolean
 
-  walls: Wall[];
-  wallStart: Point | null;
-  cameras: Camera[];
+  walls: Wall[]
+  wallStart: Point | null
 
-  past: SceneSnapshot[];
-  future: SceneSnapshot[];
+  cameras: Camera[]
 
-  wallEditSnapshot: SceneSnapshot | null;
-  cameraEditSnapshot: SceneSnapshot | null;
+  past: SceneSnapshot[]
+  future: SceneSnapshot[]
 
-  movingWallId: string | null;
-  movingWallOffset: MoveOffset;
+  wallEditSnapshot: SceneSnapshot | null
+  cameraEditSnapshot: SceneSnapshot | null
 
-  setTool: (tool: Tool) => void;
-  setZoom: (zoom: number) => void;
-  setOffset: (x: number, y: number) => void;
-  setPanning: (value: boolean) => void;
+  movingWallId: string | null
+  movingWallOffset: MoveOffset
 
-  setWallStart: (point: Point | null) => void;
+  setTool: (tool: Tool) => void
 
-  addWall: (wall: Wall) => void;
-  selectWall: (id: string | null) => void;
+  setZoom: (zoom: number) => void
 
-  beginWallEdit: () => void;
+  setOffset: (
+    x: number,
+    y: number,
+  ) => void
+
+  setPanning: (
+    value: boolean,
+  ) => void
+
+  setWallStart: (
+    point: Point | null,
+  ) => void
+
+  addWall: (
+    wall: Wall,
+  ) => void
+
+  selectWall: (
+    id: string | null,
+  ) => void
+
+  beginWallEdit: () => void
 
   updateWallEndpoint: (
     id: string,
     endpoint: WallEndpoint,
     point: Point,
-  ) => void;
+  ) => void
 
-  finishWallEdit: () => void;
+  finishWallEdit: () => void
 
-  beginWallMove: (id: string) => void;
+  beginWallMove: (
+    id: string,
+  ) => void
 
   updateWallMoveOffset: (
     x: number,
     y: number,
-  ) => void;
+  ) => void
 
   finishWallMove: (
     id: string,
     offsetX: number,
     offsetY: number,
-  ) => void;
+  ) => void
 
-  cancelWallMove: () => void;
+  cancelWallMove: () => void
 
-  addCamera: (camera: Camera) => void;
-  selectCamera: (id: string | null) => void;
+  addCamera: (
+    camera: Camera,
+  ) => void
 
-  beginCameraEdit: () => void;
+  selectCamera: (
+    id: string | null,
+  ) => void
+
+  beginCameraEdit: () => void
 
   updateCameraPosition: (
     id: string,
     point: Point,
-  ) => void;
+  ) => void
 
   updateCameraRotation: (
     id: string,
     rotation: number,
-  ) => void;
+  ) => void
 
   updateCameraProperties: (
     id: string,
     changes: CameraPropertyChanges,
-  ) => void;
+  ) => void
 
-  finishCameraEdit: () => void;
+  finishCameraEdit: () => void
 
-  clearSelection: () => void;
-  deleteSelectedObject: () => void;
+  clearSelection: () => void
 
-  undo: () => void;
-  redo: () => void;
+  selectObjectsInRect: (
+    bounds: SelectionBounds,
+    additive?: boolean,
+  ) => void
+
+  deleteSelectedObject: () => void
+
+  undo: () => void
+  redo: () => void
 }
 
-function cloneWalls(walls: Wall[]): Wall[] {
+function cloneWalls(
+  walls: Wall[],
+): Wall[] {
   return walls.map((wall) => ({
     ...wall,
-    start: { ...wall.start },
-    end: { ...wall.end },
-  }));
+
+    start: {
+      ...wall.start,
+    },
+
+    end: {
+      ...wall.end,
+    },
+  }))
 }
 
 function cloneCameras(
@@ -129,8 +173,11 @@ function cloneCameras(
 ): Camera[] {
   return cameras.map((camera) => ({
     ...camera,
-    position: { ...camera.position },
-  }));
+
+    position: {
+      ...camera.position,
+    },
+  }))
 }
 
 function createSnapshot(
@@ -140,19 +187,214 @@ function createSnapshot(
   return {
     walls: cloneWalls(walls),
     cameras: cloneCameras(cameras),
-  };
+  }
 }
 
 function snapshotsAreEqual(
   first: SceneSnapshot,
   second: SceneSnapshot,
 ): boolean {
-  return JSON.stringify(first) === JSON.stringify(second);
+  return (
+    JSON.stringify(first) ===
+    JSON.stringify(second)
+  )
+}
+
+function pointInsideBounds(
+  point: Point,
+  bounds: SelectionBounds,
+): boolean {
+  return (
+    point.x >= bounds.minX &&
+    point.x <= bounds.maxX &&
+    point.y >= bounds.minY &&
+    point.y <= bounds.maxY
+  )
+}
+
+function orientation(
+  first: Point,
+  second: Point,
+  third: Point,
+): number {
+  const value =
+    (second.y - first.y) *
+      (third.x - second.x) -
+    (second.x - first.x) *
+      (third.y - second.y)
+
+  if (Math.abs(value) < 0.000001) {
+    return 0
+  }
+
+  return value > 0 ? 1 : 2
+}
+
+function pointOnSegment(
+  first: Point,
+  second: Point,
+  point: Point,
+): boolean {
+  return (
+    point.x <=
+      Math.max(first.x, second.x) &&
+    point.x >=
+      Math.min(first.x, second.x) &&
+    point.y <=
+      Math.max(first.y, second.y) &&
+    point.y >=
+      Math.min(first.y, second.y)
+  )
+}
+
+function segmentsIntersect(
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+): boolean {
+  const o1 = orientation(
+    firstStart,
+    firstEnd,
+    secondStart,
+  )
+
+  const o2 = orientation(
+    firstStart,
+    firstEnd,
+    secondEnd,
+  )
+
+  const o3 = orientation(
+    secondStart,
+    secondEnd,
+    firstStart,
+  )
+
+  const o4 = orientation(
+    secondStart,
+    secondEnd,
+    firstEnd,
+  )
+
+  if (
+    o1 !== o2 &&
+    o3 !== o4
+  ) {
+    return true
+  }
+
+  if (
+    o1 === 0 &&
+    pointOnSegment(
+      firstStart,
+      firstEnd,
+      secondStart,
+    )
+  ) {
+    return true
+  }
+
+  if (
+    o2 === 0 &&
+    pointOnSegment(
+      firstStart,
+      firstEnd,
+      secondEnd,
+    )
+  ) {
+    return true
+  }
+
+  if (
+    o3 === 0 &&
+    pointOnSegment(
+      secondStart,
+      secondEnd,
+      firstStart,
+    )
+  ) {
+    return true
+  }
+
+  return (
+    o4 === 0 &&
+    pointOnSegment(
+      secondStart,
+      secondEnd,
+      firstEnd,
+    )
+  )
+}
+
+function wallIntersectsBounds(
+  wall: Wall,
+  bounds: SelectionBounds,
+): boolean {
+  if (
+    pointInsideBounds(
+      wall.start,
+      bounds,
+    ) ||
+    pointInsideBounds(
+      wall.end,
+      bounds,
+    )
+  ) {
+    return true
+  }
+
+  const topLeft = {
+    x: bounds.minX,
+    y: bounds.minY,
+  }
+
+  const topRight = {
+    x: bounds.maxX,
+    y: bounds.minY,
+  }
+
+  const bottomRight = {
+    x: bounds.maxX,
+    y: bounds.maxY,
+  }
+
+  const bottomLeft = {
+    x: bounds.minX,
+    y: bounds.maxY,
+  }
+
+  return (
+    segmentsIntersect(
+      wall.start,
+      wall.end,
+      topLeft,
+      topRight,
+    ) ||
+    segmentsIntersect(
+      wall.start,
+      wall.end,
+      topRight,
+      bottomRight,
+    ) ||
+    segmentsIntersect(
+      wall.start,
+      wall.end,
+      bottomRight,
+      bottomLeft,
+    ) ||
+    segmentsIntersect(
+      wall.start,
+      wall.end,
+      bottomLeft,
+      topLeft,
+    )
+  )
 }
 
 export const useDesignerStore =
   create<DesignerState>((set) => ({
-    tool: "select",
+    tool: 'select',
 
     zoom: 1,
     offsetX: 0,
@@ -162,6 +404,7 @@ export const useDesignerStore =
 
     walls: [],
     wallStart: null,
+
     cameras: [],
 
     past: [],
@@ -177,37 +420,41 @@ export const useDesignerStore =
       y: 0,
     },
 
-    setTool: (tool) =>
+    setTool: (tool): void =>
       set({
         tool,
         wallStart: null,
       }),
 
-    setZoom: (zoom) =>
+    setZoom: (zoom): void =>
       set({
         zoom,
       }),
 
-    setOffset: (x, y) =>
+    setOffset: (
+      x,
+      y,
+    ): void =>
       set({
         offsetX: x,
         offsetY: y,
       }),
 
-    setPanning: (value) =>
+    setPanning: (value): void =>
       set({
         isPanning: value,
       }),
 
-    setWallStart: (point) =>
+    setWallStart: (point): void =>
       set({
         wallStart: point,
       }),
 
-    addWall: (wall) =>
+    addWall: (wall): void =>
       set((state) => ({
         past: [
           ...state.past,
+
           createSnapshot(
             state.walls,
             state.cameras,
@@ -222,25 +469,31 @@ export const useDesignerStore =
         future: [],
       })),
 
-    selectWall: (id) =>
+    selectWall: (id): void =>
       set((state) => ({
-        walls: state.walls.map((wall) => ({
-          ...wall,
-          selected: wall.id === id,
-        })),
-
-        cameras: state.cameras.map(
-          (camera) => ({
-            ...camera,
-            selected: false,
+        walls: state.walls.map(
+          (wall) => ({
+            ...wall,
+            selected:
+              wall.id === id,
           }),
         ),
+
+        cameras:
+          state.cameras.map(
+            (camera) => ({
+              ...camera,
+              selected: false,
+            }),
+          ),
       })),
 
-    beginWallEdit: () =>
+    beginWallEdit: (): void =>
       set((state) => {
-        if (state.wallEditSnapshot) {
-          return state;
+        if (
+          state.wallEditSnapshot
+        ) {
+          return state
         }
 
         return {
@@ -249,43 +502,50 @@ export const useDesignerStore =
               state.walls,
               state.cameras,
             ),
-        };
+        }
       }),
 
     updateWallEndpoint: (
       id,
       endpoint,
       point,
-    ) =>
+    ): void =>
       set((state) => ({
-        walls: state.walls.map((wall) => {
-          if (wall.id !== id) {
-            return wall;
-          }
+        walls:
+          state.walls.map(
+            (wall) => {
+              if (
+                wall.id !== id
+              ) {
+                return wall
+              }
 
-          return {
-            ...wall,
-            [endpoint]: {
-              x: point.x,
-              y: point.y,
+              return {
+                ...wall,
+
+                [endpoint]: {
+                  x: point.x,
+                  y: point.y,
+                },
+              }
             },
-          };
-        }),
+          ),
       })),
 
-    finishWallEdit: () =>
+    finishWallEdit: (): void =>
       set((state) => {
         const snapshot =
-          state.wallEditSnapshot;
+          state.wallEditSnapshot
 
         if (!snapshot) {
-          return state;
+          return state
         }
 
-        const current = createSnapshot(
-          state.walls,
-          state.cameras,
-        );
+        const current =
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          )
 
         if (
           snapshotsAreEqual(
@@ -294,8 +554,9 @@ export const useDesignerStore =
           )
         ) {
           return {
-            wallEditSnapshot: null,
-          };
+            wallEditSnapshot:
+              null,
+          }
         }
 
         return {
@@ -305,11 +566,13 @@ export const useDesignerStore =
           ],
 
           future: [],
-          wallEditSnapshot: null,
-        };
+
+          wallEditSnapshot:
+            null,
+        }
       }),
 
-    beginWallMove: (id) =>
+    beginWallMove: (id): void =>
       set((state) => ({
         movingWallId: id,
 
@@ -326,7 +589,10 @@ export const useDesignerStore =
           ),
       })),
 
-    updateWallMoveOffset: (x, y) =>
+    updateWallMoveOffset: (
+      x,
+      y,
+    ): void =>
       set({
         movingWallOffset: {
           x,
@@ -338,48 +604,56 @@ export const useDesignerStore =
       id,
       moveX,
       moveY,
-    ) =>
+    ): void =>
       set((state) => {
         const snapshot =
-          state.wallEditSnapshot;
+          state.wallEditSnapshot
 
-        const updatedWalls =
-          state.walls.map((wall) => {
-            if (wall.id !== id) {
-              return wall;
-            }
+        const walls =
+          state.walls.map(
+            (wall) => {
+              if (
+                wall.id !== id
+              ) {
+                return wall
+              }
 
-            return {
-              ...wall,
+              return {
+                ...wall,
 
-              start: {
-                x:
-                  wall.start.x +
-                  moveX,
-                y:
-                  wall.start.y +
-                  moveY,
-              },
+                start: {
+                  x:
+                    wall.start.x +
+                    moveX,
 
-              end: {
-                x:
-                  wall.end.x +
-                  moveX,
-                y:
-                  wall.end.y +
-                  moveY,
-              },
-            };
-          });
+                  y:
+                    wall.start.y +
+                    moveY,
+                },
+
+                end: {
+                  x:
+                    wall.end.x +
+                    moveX,
+
+                  y:
+                    wall.end.y +
+                    moveY,
+                },
+              }
+            },
+          )
 
         const changed =
-          moveX !== 0 || moveY !== 0;
+          moveX !== 0 ||
+          moveY !== 0
 
         return {
-          walls: updatedWalls,
+          walls,
 
           past:
-            changed && snapshot
+            changed &&
+            snapshot
               ? [
                   ...state.past,
                   snapshot,
@@ -398,11 +672,12 @@ export const useDesignerStore =
             y: 0,
           },
 
-          wallEditSnapshot: null,
-        };
+          wallEditSnapshot:
+            null,
+        }
       }),
 
-    cancelWallMove: () =>
+    cancelWallMove: (): void =>
       set({
         movingWallId: null,
 
@@ -414,10 +689,11 @@ export const useDesignerStore =
         wallEditSnapshot: null,
       }),
 
-    addCamera: (camera) =>
+    addCamera: (camera): void =>
       set((state) => ({
         past: [
           ...state.past,
+
           createSnapshot(
             state.walls,
             state.cameras,
@@ -432,25 +708,32 @@ export const useDesignerStore =
         future: [],
       })),
 
-    selectCamera: (id) =>
+    selectCamera: (id): void =>
       set((state) => ({
-        walls: state.walls.map((wall) => ({
-          ...wall,
-          selected: false,
-        })),
+        walls:
+          state.walls.map(
+            (wall) => ({
+              ...wall,
+              selected: false,
+            }),
+          ),
 
-        cameras: state.cameras.map(
-          (camera) => ({
-            ...camera,
-            selected: camera.id === id,
-          }),
-        ),
+        cameras:
+          state.cameras.map(
+            (camera) => ({
+              ...camera,
+              selected:
+                camera.id === id,
+            }),
+          ),
       })),
 
-    beginCameraEdit: () =>
+    beginCameraEdit: (): void =>
       set((state) => {
-        if (state.cameraEditSnapshot) {
-          return state;
+        if (
+          state.cameraEditSnapshot
+        ) {
+          return state
         }
 
         return {
@@ -459,89 +742,100 @@ export const useDesignerStore =
               state.walls,
               state.cameras,
             ),
-        };
+        }
       }),
 
     updateCameraPosition: (
       id,
       point,
-    ) =>
+    ): void =>
       set((state) => ({
-        cameras: state.cameras.map(
-          (camera) => {
-            if (camera.id !== id) {
-              return camera;
-            }
+        cameras:
+          state.cameras.map(
+            (camera) => {
+              if (
+                camera.id !== id
+              ) {
+                return camera
+              }
 
-            return {
-              ...camera,
-              position: {
-                x: point.x,
-                y: point.y,
-              },
-            };
-          },
-        ),
+              return {
+                ...camera,
+
+                position: {
+                  x: point.x,
+                  y: point.y,
+                },
+              }
+            },
+          ),
       })),
 
     updateCameraRotation: (
       id,
       rotation,
-    ) =>
+    ): void =>
       set((state) => ({
-        cameras: state.cameras.map(
-          (camera) => {
-            if (camera.id !== id) {
-              return camera;
-            }
+        cameras:
+          state.cameras.map(
+            (camera) => {
+              if (
+                camera.id !== id
+              ) {
+                return camera
+              }
 
-            return {
-              ...camera,
-              rotation,
-            };
-          },
-        ),
+              return {
+                ...camera,
+                rotation,
+              }
+            },
+          ),
       })),
 
     updateCameraProperties: (
       id,
       changes,
-    ) =>
+    ): void =>
       set((state) => ({
-        cameras: state.cameras.map(
-          (camera) => {
-            if (camera.id !== id) {
-              return camera;
-            }
+        cameras:
+          state.cameras.map(
+            (camera) => {
+              if (
+                camera.id !== id
+              ) {
+                return camera
+              }
 
-            return {
-              ...camera,
-              ...changes,
+              return {
+                ...camera,
+                ...changes,
 
-              position:
-                changes.position
-                  ? {
-                      ...changes.position,
-                    }
-                  : camera.position,
-            };
-          },
-        ),
+                position:
+                  changes.position
+                    ? {
+                        ...changes.position,
+                      }
+                    : camera.position,
+              }
+            },
+          ),
       })),
 
-    finishCameraEdit: () =>
+    finishCameraEdit: (): void =>
       set((state) => {
         const snapshot =
-          state.cameraEditSnapshot;
+          state.cameraEditSnapshot
 
         if (!snapshot) {
-          return state;
+          return state
         }
 
-        const current = createSnapshot(
-          state.walls,
-          state.cameras,
-        );
+        const current =
+          createSnapshot(
+            state.walls,
+            state.cameras,
+          )
 
         if (
           snapshotsAreEqual(
@@ -550,8 +844,9 @@ export const useDesignerStore =
           )
         ) {
           return {
-            cameraEditSnapshot: null,
-          };
+            cameraEditSnapshot:
+              null,
+          }
         }
 
         return {
@@ -561,56 +856,114 @@ export const useDesignerStore =
           ],
 
           future: [],
-          cameraEditSnapshot: null,
-        };
+
+          cameraEditSnapshot:
+            null,
+        }
       }),
 
-    clearSelection: () =>
+    clearSelection: (): void =>
       set((state) => ({
-        walls: state.walls.map((wall) => ({
-          ...wall,
-          selected: false,
-        })),
+        walls:
+          state.walls.map(
+            (wall) => ({
+              ...wall,
+              selected: false,
+            }),
+          ),
 
-        cameras: state.cameras.map(
-          (camera) => ({
-            ...camera,
-            selected: false,
-          }),
-        ),
+        cameras:
+          state.cameras.map(
+            (camera) => ({
+              ...camera,
+              selected: false,
+            }),
+          ),
       })),
 
-    deleteSelectedObject: () =>
+    selectObjectsInRect: (
+      bounds,
+      additive = false,
+    ): void =>
+      set((state) => ({
+        walls:
+          state.walls.map(
+            (wall) => {
+              const inside =
+                wallIntersectsBounds(
+                  wall,
+                  bounds,
+                )
+
+              return {
+                ...wall,
+
+                selected:
+                  additive
+                    ? Boolean(
+                        wall.selected ||
+                          inside,
+                      )
+                    : inside,
+              }
+            },
+          ),
+
+        cameras:
+          state.cameras.map(
+            (camera) => {
+              const inside =
+                pointInsideBounds(
+                  camera.position,
+                  bounds,
+                )
+
+              return {
+                ...camera,
+
+                selected:
+                  additive
+                    ? Boolean(
+                        camera.selected ||
+                          inside,
+                      )
+                    : inside,
+              }
+            },
+          ),
+      })),
+
+    deleteSelectedObject: (): void =>
       set((state) => {
-        const hasSelectedWall =
+        const hasSelection =
           state.walls.some(
-            (wall) => wall.selected,
-          );
-
-        const hasSelectedCamera =
+            (wall) =>
+              wall.selected,
+          ) ||
           state.cameras.some(
-            (camera) => camera.selected,
-          );
+            (camera) =>
+              camera.selected,
+          )
 
-        if (
-          !hasSelectedWall &&
-          !hasSelectedCamera
-        ) {
-          return state;
+        if (!hasSelection) {
+          return state
         }
 
         return {
           past: [
             ...state.past,
+
             createSnapshot(
               state.walls,
               state.cameras,
             ),
           ],
 
-          walls: state.walls.filter(
-            (wall) => !wall.selected,
-          ),
+          walls:
+            state.walls.filter(
+              (wall) =>
+                !wall.selected,
+            ),
 
           cameras:
             state.cameras.filter(
@@ -619,23 +972,27 @@ export const useDesignerStore =
             ),
 
           future: [],
-        };
+        }
       }),
 
-    undo: () =>
+    undo: (): void =>
       set((state) => {
-        if (state.past.length === 0) {
-          return state;
+        if (
+          state.past.length === 0
+        ) {
+          return state
         }
 
         const previous =
           state.past[
             state.past.length - 1
-          ];
+          ]
 
         return {
           walls:
-            cloneWalls(previous.walls),
+            cloneWalls(
+              previous.walls,
+            ),
 
           cameras:
             cloneCameras(
@@ -643,40 +1000,54 @@ export const useDesignerStore =
             ),
 
           past:
-            state.past.slice(0, -1),
+            state.past.slice(
+              0,
+              -1,
+            ),
 
           future: [
             createSnapshot(
               state.walls,
               state.cameras,
             ),
+
             ...state.future,
           ],
 
           wallStart: null,
-          wallEditSnapshot: null,
-          cameraEditSnapshot: null,
+
+          wallEditSnapshot:
+            null,
+
+          cameraEditSnapshot:
+            null,
+
           movingWallId: null,
 
           movingWallOffset: {
             x: 0,
             y: 0,
           },
-        };
+        }
       }),
 
-    redo: () =>
+    redo: (): void =>
       set((state) => {
-        if (state.future.length === 0) {
-          return state;
+        if (
+          state.future.length ===
+          0
+        ) {
+          return state
         }
 
         const next =
-          state.future[0];
+          state.future[0]
 
         return {
           walls:
-            cloneWalls(next.walls),
+            cloneWalls(
+              next.walls,
+            ),
 
           cameras:
             cloneCameras(
@@ -685,6 +1056,7 @@ export const useDesignerStore =
 
           past: [
             ...state.past,
+
             createSnapshot(
               state.walls,
               state.cameras,
@@ -692,18 +1064,25 @@ export const useDesignerStore =
           ],
 
           future:
-            state.future.slice(1),
+            state.future.slice(
+              1,
+            ),
 
           wallStart: null,
-          wallEditSnapshot: null,
-          cameraEditSnapshot: null,
+
+          wallEditSnapshot:
+            null,
+
+          cameraEditSnapshot:
+            null,
+
           movingWallId: null,
 
           movingWallOffset: {
             x: 0,
             y: 0,
           },
-        };
+        }
       }),
-  }));
+  }))
   
