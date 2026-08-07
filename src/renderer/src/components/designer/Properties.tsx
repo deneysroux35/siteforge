@@ -10,24 +10,34 @@ import {
   Camera,
   ChartNoAxesCombined,
   HardDrive,
+  Landmark,
   Package,
   PanelsTopLeft,
   Video,
   WalletCards,
 } from 'lucide-react'
 
-import CameraLibrary from '../library/CameraLibrary'
+import CameraLibrary from '../core/CameraLibrary'
 
+import FinancePanel from './FinancePanel'
 import InspectorSection from './InspectorSection'
 import ProjectSummary from './ProjectSummary'
 import SmartEquipmentPanel from './SmartEquipmentPanel'
 
-import { useDesignerStore } from '../../store/designerStore'
+import {
+  useDesignerStore,
+} from '../../store/designerStore'
 
 const GRID_SIZE = 25
 
-function snapToGrid(value: number): number {
-  return Math.round(value / GRID_SIZE) * GRID_SIZE
+function snapToGrid(
+  value: number,
+): number {
+  return (
+    Math.round(
+      value / GRID_SIZE,
+    ) * GRID_SIZE
+  )
 }
 
 function clamp(
@@ -37,7 +47,10 @@ function clamp(
 ): number {
   return Math.min(
     maximum,
-    Math.max(minimum, value),
+    Math.max(
+      minimum,
+      value,
+    ),
   )
 }
 
@@ -82,17 +95,21 @@ export default function Properties(): JSX.Element {
   ] = useState(false)
 
   const selectedWall =
-    useDesignerStore((state) =>
-      state.walls.find(
-        (wall) => wall.selected,
-      ),
+    useDesignerStore(
+      (state) =>
+        state.walls.find(
+          (wall) =>
+            wall.selected,
+        ),
     )
 
   const selectedCamera =
-    useDesignerStore((state) =>
-      state.cameras.find(
-        (camera) => camera.selected,
-      ),
+    useDesignerStore(
+      (state) =>
+        state.cameras.find(
+          (camera) =>
+            camera.selected,
+        ),
     )
 
   const beginCameraEdit =
@@ -152,35 +169,25 @@ export default function Properties(): JSX.Element {
         style={{
           width: 320,
           flexShrink: 0,
-
           background: '#13161c',
-
           borderLeft:
             '1px solid #343b47',
-
           color: '#dddddd',
-
           overflowY: 'auto',
           overflowX: 'hidden',
         }}
       >
-        {/* Inspector header */}
-
         <div
           style={{
             position: 'sticky',
             top: 0,
             zIndex: 5,
-
             padding:
               '15px 16px 13px',
-
             background:
               'rgba(19, 22, 28, 0.97)',
-
             borderBottom:
               '1px solid #2d333d',
-
             backdropFilter:
               'blur(10px)',
           }}
@@ -188,12 +195,9 @@ export default function Properties(): JSX.Element {
           <div
             style={{
               color: '#68717d',
-
               fontSize: 9,
               fontWeight: 900,
-
               letterSpacing: 1.3,
-
               textTransform:
                 'uppercase',
             }}
@@ -204,17 +208,12 @@ export default function Properties(): JSX.Element {
           <div
             style={{
               marginTop: 5,
-
               overflow: 'hidden',
-
               color: '#ffffff',
-
               fontSize: 15,
               fontWeight: 800,
-
               textOverflow:
                 'ellipsis',
-
               whiteSpace: 'nowrap',
             }}
           >
@@ -222,15 +221,11 @@ export default function Properties(): JSX.Element {
           </div>
         </div>
 
-        {/* Inspector content */}
-
         <div
           style={{
             padding: 12,
           }}
         >
-          {/* Selected object */}
-
           <InspectorSection
             title="Selected Object"
             subtitle="Object properties and controls"
@@ -265,8 +260,6 @@ export default function Properties(): JSX.Element {
                   it.
                 </div>
               )}
-
-            {/* Wall properties */}
 
             {selectedWall && (
               <>
@@ -373,35 +366,23 @@ export default function Properties(): JSX.Element {
                   }
                   style={{
                     width: '100%',
-
                     padding:
                       '10px 12px',
-
                     background:
                       '#3a1919',
-
                     color:
                       '#ff8a8a',
-
                     border:
                       '1px solid #6b2929',
-
-                    borderRadius:
-                      6,
-
-                    cursor:
-                      'pointer',
-
-                    fontWeight:
-                      800,
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontWeight: 800,
                   }}
                 >
                   Delete Wall
                 </button>
               </>
             )}
-
-            {/* Camera properties */}
 
             {selectedCamera && (
               <>
@@ -414,34 +395,21 @@ export default function Properties(): JSX.Element {
                   }}
                   style={{
                     width: '100%',
-
-                    marginBottom:
-                      16,
-
+                    marginBottom: 16,
                     padding:
                       '10px 12px',
-
                     background:
                       '#173619',
-
                     color:
                       '#39ff14',
-
                     border:
                       '1px solid #2f7a34',
-
-                    borderRadius:
-                      7,
-
-                    cursor:
-                      'pointer',
-
-                    fontWeight:
-                      800,
+                    borderRadius: 7,
+                    cursor: 'pointer',
+                    fontWeight: 800,
                   }}
                 >
-                  Browse Camera
-                  Library
+                  Browse Camera Library
                 </button>
 
                 <div
@@ -494,20 +462,13 @@ export default function Properties(): JSX.Element {
                   />
                 </div>
 
-                {/* Position */}
-
                 <div
                   style={{
-                    display:
-                      'grid',
-
+                    display: 'grid',
                     gridTemplateColumns:
                       '1fr 1fr',
-
                     gap: 9,
-
-                    marginBottom:
-                      14,
+                    marginBottom: 14,
                   }}
                 >
                   <div>
@@ -569,7 +530,6 @@ export default function Properties(): JSX.Element {
                                 x: snapToGrid(
                                   value,
                                 ),
-
                                 y:
                                   selectedCamera
                                     .position
@@ -641,7 +601,6 @@ export default function Properties(): JSX.Element {
                                   selectedCamera
                                     .position
                                     .x,
-
                                 y: snapToGrid(
                                   value,
                                 ),
@@ -652,8 +611,6 @@ export default function Properties(): JSX.Element {
                     />
                   </div>
                 </div>
-
-                {/* Rotation */}
 
                 <div
                   style={
@@ -725,8 +682,6 @@ export default function Properties(): JSX.Element {
             )}
           </InspectorSection>
 
-          {/* Camera coverage */}
-
           {selectedCamera && (
             <InspectorSection
               title="Camera Coverage"
@@ -760,9 +715,7 @@ export default function Properties(): JSX.Element {
                     selectedCamera.fieldOfView
                   }
                   style={{
-                    width:
-                      '100%',
-
+                    width: '100%',
                     accentColor:
                       '#39ff14',
                   }}
@@ -797,15 +750,10 @@ export default function Properties(): JSX.Element {
                   style={{
                     color:
                       '#39ff14',
-
                     textAlign:
                       'right',
-
-                    fontSize:
-                      12,
-
-                    fontWeight:
-                      800,
+                    fontSize: 12,
+                    fontWeight: 800,
                   }}
                 >
                   {
@@ -836,9 +784,7 @@ export default function Properties(): JSX.Element {
                     selectedCamera.range
                   }
                   style={{
-                    width:
-                      '100%',
-
+                    width: '100%',
                     accentColor:
                       '#39ff14',
                   }}
@@ -873,15 +819,10 @@ export default function Properties(): JSX.Element {
                   style={{
                     color:
                       '#39ff14',
-
                     textAlign:
                       'right',
-
-                    fontSize:
-                      12,
-
-                    fontWeight:
-                      800,
+                    fontSize: 12,
+                    fontWeight: 800,
                   }}
                 >
                   {
@@ -898,35 +839,23 @@ export default function Properties(): JSX.Element {
                 }
                 style={{
                   width: '100%',
-
                   padding:
                     '10px 12px',
-
                   background:
                     '#3a1919',
-
                   color:
                     '#ff8a8a',
-
                   border:
                     '1px solid #6b2929',
-
-                  borderRadius:
-                    6,
-
-                  cursor:
-                    'pointer',
-
-                  fontWeight:
-                    800,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: 800,
                 }}
               >
                 Delete Camera
               </button>
             </InspectorSection>
           )}
-
-          {/* Project Summary */}
 
           <InspectorSection
             title="Project Summary"
@@ -943,8 +872,6 @@ export default function Properties(): JSX.Element {
             <ProjectSummary />
           </InspectorSection>
 
-          {/* Smart Equipment */}
-
           <InspectorSection
             title="Equipment"
             subtitle="Smart equipment sizing"
@@ -960,7 +887,20 @@ export default function Properties(): JSX.Element {
             <SmartEquipmentPanel />
           </InspectorSection>
 
-          {/* Storage */}
+          <InspectorSection
+            title="Finance"
+            subtitle="Cash and rental options"
+            icon={
+              <Landmark
+                size={15}
+              />
+            }
+            accentColor="#4fc3f7"
+            badge="LIVE"
+            defaultOpen={false}
+          >
+            <FinancePanel />
+          </InspectorSection>
 
           <InspectorSection
             title="Storage"
@@ -986,8 +926,6 @@ export default function Properties(): JSX.Element {
             </div>
           </InspectorSection>
 
-          {/* Commercial */}
-
           <InspectorSection
             title="Commercial"
             subtitle="Costs, pricing and margins"
@@ -1007,12 +945,11 @@ export default function Properties(): JSX.Element {
               Equipment cost,
               labour, markup,
               selling price and
-              margin will appear
-              here.
+              margin are managed in
+              the Commercial
+              workspace.
             </div>
           </InspectorSection>
-
-          {/* AI */}
 
           <InspectorSection
             title="AI Assistant"

@@ -31,97 +31,71 @@ function clamp(
   minimum: number,
   maximum: number,
 ): number {
-  return Math.min(
-    maximum,
-    Math.max(
-      minimum,
-      value,
-    ),
-  )
+  return Math.min(maximum, Math.max(minimum, value))
 }
 
 export default function ViewportFrame(): JSX.Element {
   const canvasContainerRef =
-    useRef<HTMLDivElement>(null)
+    useRef<HTMLDivElement | null>(null)
 
-  const [
-    viewportSize,
-    setViewportSize,
-  ] = useState<ViewportSize>({
-    width: 1,
-    height: 1,
-  })
+  const [viewportSize, setViewportSize] =
+    useState<ViewportSize>({
+      width: 1,
+      height: 1,
+    })
 
-  const zoom =
-    useDesignerStore(
-      (state) =>
-        state.zoom,
-    )
-
-  const offsetX =
-    useDesignerStore(
-      (state) =>
-        state.offsetX,
-    )
-
-  const offsetY =
-    useDesignerStore(
-      (state) =>
-        state.offsetY,
-    )
-
-  const setZoom =
-    useDesignerStore(
-      (state) =>
-        state.setZoom,
-    )
-
-  const setOffset =
-    useDesignerStore(
-      (state) =>
-        state.setOffset,
-    )
-
-  useEffect(
-    (): (() => void) | void => {
-      const container =
-        canvasContainerRef.current
-
-      if (!container) {
-        return
-      }
-
-      function updateSize(): void {
-        setViewportSize({
-          width: Math.max(
-            1,
-            container.clientWidth,
-          ),
-
-          height: Math.max(
-            1,
-            container.clientHeight,
-          ),
-        })
-      }
-
-      updateSize()
-
-      const observer =
-        new ResizeObserver(
-          updateSize,
-        )
-
-      observer.observe(
-        container,
-      )
-
-      return (): void => {
-        observer.disconnect()
-      }
-    },
-    [],
+  const zoom = useDesignerStore(
+    (state) => state.zoom,
   )
+
+  const offsetX = useDesignerStore(
+    (state) => state.offsetX,
+  )
+
+  const offsetY = useDesignerStore(
+    (state) => state.offsetY,
+  )
+
+  const setZoom = useDesignerStore(
+    (state) => state.setZoom,
+  )
+
+  const setOffset = useDesignerStore(
+    (state) => state.setOffset,
+  )
+
+  useEffect(() => {
+    const container =
+      canvasContainerRef.current
+
+    if (!container) {
+      return
+    }
+
+    const updateSize = (): void => {
+      setViewportSize({
+        width: Math.max(
+          1,
+          container.clientWidth,
+        ),
+        height: Math.max(
+          1,
+          container.clientHeight,
+        ),
+      })
+    }
+
+    updateSize()
+
+    const observer =
+      new ResizeObserver(updateSize)
+
+    observer.observe(container)
+
+    return (): void => {
+      observer.disconnect()
+    }
+  }, [])
 
   function handleWheelCapture(
     event: ReactWheelEvent<HTMLDivElement>,
@@ -140,29 +114,26 @@ export default function ViewportFrame(): JSX.Element {
       container.getBoundingClientRect()
 
     const pointerX =
-      event.clientX -
-      bounds.left
+      event.clientX - bounds.left
 
     const pointerY =
-      event.clientY -
-      bounds.top
+      event.clientY - bounds.top
+
+    const safeZoom =
+      Math.max(0.01, zoom)
 
     const worldX =
-      (pointerX -
-        offsetX) /
-      zoom
+      (pointerX - offsetX) /
+      safeZoom
 
     const worldY =
-      (pointerY -
-        offsetY) /
-      zoom
+      (pointerY - offsetY) /
+      safeZoom
 
     const requestedZoom =
       event.deltaY < 0
-        ? zoom *
-          ZOOM_FACTOR
-        : zoom /
-          ZOOM_FACTOR
+        ? zoom * ZOOM_FACTOR
+        : zoom / ZOOM_FACTOR
 
     const newZoom =
       clamp(
@@ -171,25 +142,19 @@ export default function ViewportFrame(): JSX.Element {
         MAX_ZOOM,
       )
 
-    if (
-      newZoom === zoom
-    ) {
+    if (newZoom === zoom) {
       return
     }
 
     const newOffsetX =
       pointerX -
-      worldX *
-        newZoom
+      worldX * newZoom
 
     const newOffsetY =
       pointerY -
-      worldY *
-        newZoom
+      worldY * newZoom
 
-    setZoom(
-      newZoom,
-    )
+    setZoom(newZoom)
 
     setOffset(
       newOffsetX,
@@ -202,7 +167,6 @@ export default function ViewportFrame(): JSX.Element {
       style={{
         width: '100%',
         height: '100%',
-
         minWidth: 0,
         minHeight: 0,
 
@@ -214,17 +178,13 @@ export default function ViewportFrame(): JSX.Element {
         gridTemplateRows:
           'minmax(0, 1fr) 30px',
 
-        background:
-          '#202225',
+        background: '#202225',
 
-        overflow:
-          'hidden',
+        overflow: 'hidden',
       }}
     >
       <div
-        ref={
-          canvasContainerRef
-        }
+        ref={canvasContainerRef}
         onWheelCapture={
           handleWheelCapture
         }
@@ -235,11 +195,9 @@ export default function ViewportFrame(): JSX.Element {
           minWidth: 0,
           minHeight: 0,
 
-          position:
-            'relative',
+          position: 'relative',
 
-          overflow:
-            'hidden',
+          overflow: 'hidden',
         }}
       >
         <Canvas />
@@ -286,11 +244,9 @@ export default function ViewportFrame(): JSX.Element {
 
           display: 'grid',
 
-          placeItems:
-            'center',
+          placeItems: 'center',
 
-          background:
-            '#171b21',
+          background: '#171b21',
 
           borderTop:
             '1px solid #343b47',
@@ -298,13 +254,10 @@ export default function ViewportFrame(): JSX.Element {
           borderLeft:
             '1px solid #343b47',
 
-          color:
-            '#39ff14',
+          color: '#39ff14',
         }}
       >
-        <MoveDiagonal2
-          size={14}
-        />
+        <MoveDiagonal2 size={14} />
       </div>
     </div>
   )

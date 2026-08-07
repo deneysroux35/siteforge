@@ -1,12 +1,10 @@
-import type { CameraProduct } from "../productTypes";
-
 export const dahua = [
   {
-    id: "dh-5442",
+    id: 'dh-5442',
 
-    manufacturer: "Dahua",
+    manufacturer: 'Dahua',
 
-    model: "IPC-HDW5442TM-AS",
+    model: 'IPC-HDW5442TM-AS',
 
     resolutionMP: 4,
 
@@ -30,11 +28,11 @@ export const dahua = [
   },
 
   {
-    id: "dh-5842",
+    id: 'dh-5842',
 
-    manufacturer: "Dahua",
+    manufacturer: 'Dahua',
 
-    model: "IPC-HFW5842E-ZE",
+    model: 'IPC-HFW5842E-ZE',
 
     resolutionMP: 8,
 
@@ -56,4 +54,4 @@ export const dahua = [
 
     sensor: '1/1.8"',
   },
-];
+]

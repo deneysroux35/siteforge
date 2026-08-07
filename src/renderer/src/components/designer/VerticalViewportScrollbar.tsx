@@ -6,12 +6,14 @@ import {
   type JSX,
   type MouseEvent as ReactMouseEvent,
 } from 'react'
+
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
 import { useDesignerStore } from '../../store/designerStore'
 
 const WORLD_MIN_Y = -5000
 const WORLD_MAX_Y = 5000
+
 const MIN_THUMB_HEIGHT = 54
 const PAN_STEP = 150
 
@@ -20,34 +22,39 @@ function clamp(value: number, minimum: number, maximum: number): number {
 }
 
 export default function VerticalViewportScrollbar(): JSX.Element {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const trackRef = useRef<HTMLDivElement | null>(null)
 
   const draggingRef = useRef(false)
   const dragStartYRef = useRef(0)
   const dragStartThumbTopRef = useRef(0)
 
   const [trackHeight, setTrackHeight] = useState(1)
+  const [viewportHeight, setViewportHeight] = useState(1)
 
   const zoom = useDesignerStore((state) => state.zoom)
   const offsetX = useDesignerStore((state) => state.offsetX)
   const offsetY = useDesignerStore((state) => state.offsetY)
   const setOffset = useDesignerStore((state) => state.setOffset)
 
-  useEffect((): (() => void) | void => {
+  useEffect(() => {
+    const container = containerRef.current
     const track = trackRef.current
 
-    if (!track) {
+    if (!container || !track) {
       return
     }
 
-    function updateSize(): void {
+    const updateSize = (): void => {
+      setViewportHeight(Math.max(1, container.clientHeight))
       setTrackHeight(Math.max(1, track.clientHeight))
     }
 
     updateSize()
 
     const observer = new ResizeObserver(updateSize)
+
+    observer.observe(container)
     observer.observe(track)
 
     return (): void => {
@@ -55,29 +62,44 @@ export default function VerticalViewportScrollbar(): JSX.Element {
     }
   }, [])
 
+  const safeZoom = Math.max(0.01, zoom)
+
   const worldHeight = WORLD_MAX_Y - WORLD_MIN_Y
 
-  const viewportHeight = containerRef.current?.clientHeight ?? 1
-  const viewportWorldHeight = viewportHeight / zoom
+  const viewportWorldHeight = viewportHeight / safeZoom
 
   const maximumViewTop = Math.max(
     WORLD_MIN_Y,
     WORLD_MAX_Y - viewportWorldHeight,
   )
 
-  const availableWorldTravel = maximumViewTop - WORLD_MIN_Y
-
-  const visibleRatio = clamp(viewportWorldHeight / worldHeight, 0, 1)
-
-  const thumbHeight = clamp(
-    trackHeight * visibleRatio,
-    MIN_THUMB_HEIGHT,
-    trackHeight,
+  const availableWorldTravel = Math.max(
+    0,
+    maximumViewTop - WORLD_MIN_Y,
   )
 
-  const availableThumbTravel = Math.max(0, trackHeight - thumbHeight)
+  const visibleRatio = clamp(
+    viewportWorldHeight / worldHeight,
+    0,
+    1,
+  )
 
-  const currentViewTop = -offsetY / zoom
+  const calculatedThumbHeight = trackHeight * visibleRatio
+
+  const thumbHeight = Math.min(
+    trackHeight,
+    Math.max(
+      Math.min(MIN_THUMB_HEIGHT, trackHeight),
+      calculatedThumbHeight,
+    ),
+  )
+
+  const availableThumbTravel = Math.max(
+    0,
+    trackHeight - thumbHeight,
+  )
+
+  const currentViewTop = -offsetY / safeZoom
 
   const progress =
     availableWorldTravel > 0
@@ -92,32 +114,44 @@ export default function VerticalViewportScrollbar(): JSX.Element {
 
   const updateViewportFromThumb = useCallback(
     (requestedTop: number): void => {
-      const safeTop = clamp(requestedTop, 0, availableThumbTravel)
+      const safeTop = clamp(
+        requestedTop,
+        0,
+        availableThumbTravel,
+      )
 
       const thumbProgress =
-        availableThumbTravel > 0 ? safeTop / availableThumbTravel : 0
+        availableThumbTravel > 0
+          ? safeTop / availableThumbTravel
+          : 0
 
       const newViewTop =
         WORLD_MIN_Y + thumbProgress * availableWorldTravel
 
-      setOffset(offsetX, -newViewTop * zoom)
+      setOffset(
+        offsetX,
+        -newViewTop * safeZoom,
+      )
     },
     [
       availableThumbTravel,
       availableWorldTravel,
       offsetX,
+      safeZoom,
       setOffset,
-      zoom,
     ],
   )
 
-  useEffect((): (() => void) => {
-    function handleMouseMove(event: globalThis.MouseEvent): void {
+  useEffect(() => {
+    function handleMouseMove(
+      event: globalThis.MouseEvent,
+    ): void {
       if (!draggingRef.current) {
         return
       }
 
-      const movement = event.clientY - dragStartYRef.current
+      const movement =
+        event.clientY - dragStartYRef.current
 
       updateViewportFromThumb(
         dragStartThumbTopRef.current + movement,
@@ -125,21 +159,42 @@ export default function VerticalViewportScrollbar(): JSX.Element {
     }
 
     function handleMouseUp(): void {
+      if (!draggingRef.current) {
+        return
+      }
+
       draggingRef.current = false
+
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener(
+      'mousemove',
+      handleMouseMove,
+    )
+
+    window.addEventListener(
+      'mouseup',
+      handleMouseUp,
+    )
 
     return (): void => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener(
+        'mousemove',
+        handleMouseMove,
+      )
+
+      window.removeEventListener(
+        'mouseup',
+        handleMouseUp,
+      )
     }
   }, [updateViewportFromThumb])
 
-  function startDrag(event: ReactMouseEvent<HTMLDivElement>): void {
+  function startDrag(
+    event: ReactMouseEvent<HTMLDivElement>,
+  ): void {
     event.preventDefault()
     event.stopPropagation()
 
@@ -151,24 +206,36 @@ export default function VerticalViewportScrollbar(): JSX.Element {
     document.body.style.userSelect = 'none'
   }
 
-  function handleTrackClick(event: ReactMouseEvent<HTMLDivElement>): void {
+  function handleTrackClick(
+    event: ReactMouseEvent<HTMLDivElement>,
+  ): void {
     if (event.target !== event.currentTarget) {
       return
     }
 
-    const bounds = event.currentTarget.getBoundingClientRect()
+    const bounds =
+      event.currentTarget.getBoundingClientRect()
+
+    const requestedTop =
+      event.clientY - bounds.top - thumbHeight / 2
 
     updateViewportFromThumb(
-      event.clientY - bounds.top - thumbHeight / 2,
+      requestedTop,
     )
   }
 
   function moveUp(): void {
-    setOffset(offsetX, offsetY + PAN_STEP)
+    setOffset(
+      offsetX,
+      offsetY + PAN_STEP,
+    )
   }
 
   function moveDown(): void {
-    setOffset(offsetX, offsetY - PAN_STEP)
+    setOffset(
+      offsetX,
+      offsetY - PAN_STEP,
+    )
   }
 
   return (
@@ -228,7 +295,8 @@ export default function VerticalViewportScrollbar(): JSX.Element {
             width: 12,
             height: thumbHeight,
             borderRadius: 4,
-            background: 'linear-gradient(90deg, #46505d, #2d343e)',
+            background:
+              'linear-gradient(90deg, #46505d, #2d343e)',
             border: '1px solid #687483',
             cursor: 'grab',
           }}
@@ -242,7 +310,8 @@ export default function VerticalViewportScrollbar(): JSX.Element {
               height: 3,
               borderRadius: 3,
               background: '#39ff14',
-              boxShadow: '0 0 7px rgba(57,255,20,.65)',
+              boxShadow:
+                '0 0 7px rgba(57,255,20,.65)',
             }}
           />
         </div>

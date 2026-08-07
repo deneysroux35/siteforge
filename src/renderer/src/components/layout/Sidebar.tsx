@@ -4,23 +4,78 @@ import {
   FolderOpen,
   Users,
   Package,
+  Landmark,
   FileText,
   BarChart3,
   Settings,
 } from "lucide-react";
 
+import {
+  useWorkspaceStore,
+  type SiteForgeWorkspace,
+} from "../../store/workspaceStore";
+
 const menu = [
-  { icon: LayoutDashboard, text: "Dashboard" },
-  { icon: PencilRuler, text: "Designer" },
-  { icon: FolderOpen, text: "Projects" },
-  { icon: Users, text: "Customers" },
-  { icon: Package, text: "Products" },
-  { icon: FileText, text: "Quotes" },
-  { icon: BarChart3, text: "Reports" },
-  { icon: Settings, text: "Settings" },
-];
+  {
+    icon: LayoutDashboard,
+    text: "Dashboard",
+    workspace: "dashboard",
+  },
+  {
+    icon: PencilRuler,
+    text: "Designer",
+    workspace: "designer",
+  },
+  {
+    icon: FolderOpen,
+    text: "Projects",
+    workspace: "projects",
+  },
+  {
+    icon: Users,
+    text: "Customers",
+    workspace: "customers",
+  },
+  {
+    icon: Package,
+    text: "Commercial",
+    workspace: "commercial",
+  },
+  {
+    icon: Landmark,
+    text: "Finance",
+    workspace: "finance",
+  },
+  {
+    icon: FileText,
+    text: "Proposals",
+    workspace: "proposals",
+  },
+  {
+    icon: BarChart3,
+    text: "Reports",
+    workspace: "reports",
+  },
+  {
+    icon: Settings,
+    text: "Settings",
+    workspace: "settings",
+  },
+] satisfies {
+  icon: any;
+  text: string;
+  workspace: SiteForgeWorkspace;
+}[];
 
 export default function Sidebar() {
+  const activeWorkspace = useWorkspaceStore(
+    (state) => state.activeWorkspace,
+  );
+
+  const setWorkspace = useWorkspaceStore(
+    (state) => state.setWorkspace,
+  );
+
   return (
     <aside
       style={{
@@ -37,7 +92,7 @@ export default function Sidebar() {
           padding: 24,
           fontSize: 28,
           fontWeight: 700,
-          color: "#00BCD4",
+          color: "#39ff14",
         }}
       >
         SITEFORGE
@@ -47,25 +102,40 @@ export default function Sidebar() {
         {menu.map((item) => {
           const Icon = item.icon;
 
+          const active =
+            activeWorkspace === item.workspace;
+
           return (
             <button
               key={item.text}
+              onClick={() =>
+                setWorkspace(item.workspace)
+              }
               style={{
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
                 padding: 12,
-                background: "transparent",
-                color: "#ddd",
                 border: "none",
                 cursor: "pointer",
                 borderRadius: 8,
                 marginBottom: 4,
                 fontSize: 15,
+
+                background: active
+                  ? "#22301d"
+                  : "transparent",
+
+                color: active
+                  ? "#39ff14"
+                  : "#ddd",
+
+                transition: "0.15s",
               }}
             >
               <Icon size={18} />
+
               {item.text}
             </button>
           );

@@ -48,9 +48,11 @@ export interface SmartEquipmentRecommendation {
   warnings: string[]
 }
 
-function sortBySellPrice<T extends {
-  sellPrice: number
-}>(
+function sortBySellPrice<
+  T extends {
+    sellPrice: number
+  },
+>(
   products: T[],
 ): T[] {
   return [...products].sort(
@@ -284,7 +286,7 @@ function findStorageRecommendation(
 }
 
 function getUpsProducts():
-  PowerProduct[] {
+PowerProduct[] {
   return equipmentCatalog
     .filter(
       (
@@ -306,9 +308,6 @@ function getUpsProducts():
 function findRecommendedUps(
   summary: ProjectSummary,
   nvr: NvrProduct | null,
-  poeSwitch:
-    | PoeSwitchProduct
-    | null,
 ): PowerProduct | null {
   if (
     summary.cameraCount === 0
@@ -442,8 +441,8 @@ function buildWarnings(
   const nvrHasIntegratedPoe =
     Boolean(
       nvr &&
-        nvr.poePorts >=
-          summary.cameraCount,
+      nvr.poePorts >=
+        summary.cameraCount,
     )
 
   if (
@@ -507,7 +506,6 @@ export function calculateSmartEquipment(
     findRecommendedUps(
       summary,
       nvr,
-      poeSwitch,
     )
 
   const infrastructureCost =
@@ -532,9 +530,7 @@ export function calculateSmartEquipment(
     poeSwitch,
     storage,
     ups,
-
     infrastructureCost,
-
     warnings,
   }
 }
