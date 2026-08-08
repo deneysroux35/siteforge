@@ -1,242 +1,264 @@
-import type { CSSProperties } from "react";
+import type {
+  JSX,
+  ReactNode,
+} from 'react'
 
 import {
+  Cable,
   Camera,
-  Database,
+  Clock3,
   HardDrive,
-  Layers3,
-  PlugZap,
-  Server,
-  WalletCards,
-  Zap,
-} from "lucide-react";
+  Network,
+} from 'lucide-react'
 
-import { useDesignerStore } from "../../store/designerStore";
+import {
+  useDesignerStore,
+} from '../../store/designerStore'
+
+import {
+  calculateLiveBom,
+} from '../../services/liveBomEngine'
 
 import {
   calculateProjectSummary,
-  formatZAR,
-} from "../../services/projectEngine";
+} from '../../services/projectEngine'
 
-const rowStyle: CSSProperties = {
-  minHeight: 39,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 10,
-  padding: "0 3px",
-  borderBottom: "1px solid #292f38",
-};
+interface RowProps {
+  label: string
+  value: string | number
+  accent?: string
+}
 
-const labelStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  color: "#9fa8b5",
-  fontSize: 11,
-};
+function Row({
+  label,
+  value,
+  accent,
+}: RowProps): JSX.Element {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 12,
+        padding: '7px 0',
+        borderBottom: '1px solid #262c34',
+      }}
+    >
+      <span
+        style={{
+          color: '#97a2af',
+          fontSize: 11,
+        }}
+      >
+        {label}
+      </span>
 
-const valueStyle: CSSProperties = {
-  color: "#ffffff",
-  fontSize: 12,
-  fontWeight: 800,
-  textAlign: "right",
-};
+      <strong
+        style={{
+          color: accent ?? '#ffffff',
+          fontSize: 12,
+          textAlign: 'right',
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  )
+}
 
-export default function ProjectSummary() {
-  const walls = useDesignerStore(
-    (state) => state.walls,
-  );
+interface CardProps {
+  title: string
+  icon: ReactNode
+  accent: string
+  children: ReactNode
+}
 
-  const cameras = useDesignerStore(
-    (state) => state.cameras,
-  );
+function Card({
+  title,
+  icon,
+  accent,
+  children,
+}: CardProps): JSX.Element {
+  return (
+    <div
+      style={{
+        background: '#15191f',
+        border: '1px solid #303641',
+        borderRadius: 8,
+        padding: 12,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginBottom: 10,
+          color: accent,
+          fontWeight: 700,
+          fontSize: 12,
+        }}
+      >
+        {icon}
+        {title}
+      </div>
 
-  const summary = calculateProjectSummary({
-    walls,
-    cameras,
-  });
+      {children}
+    </div>
+  )
+}
 
-  const assignmentText =
-    summary.unassignedCameraCount > 0
-      ? `${summary.assignedCameraCount} / ${summary.cameraCount}`
-      : `${summary.assignedCameraCount} assigned`;
+export default function ProjectSummary(): JSX.Element {
+  const walls =
+    useDesignerStore(
+      (state) => state.walls,
+    )
+
+  const cameras =
+    useDesignerStore(
+      (state) => state.cameras,
+    )
+
+  const equipmentHubs =
+    useDesignerStore(
+      (state) =>
+        state.equipmentHubs,
+    )
+
+  const summary =
+    calculateProjectSummary({
+      walls,
+      cameras,
+    })
+
+  const bom =
+    calculateLiveBom(
+      cameras,
+      equipmentHubs,
+    )
 
   return (
-    <div>
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <Layers3
-            size={14}
-            color="#ffd54f"
-          />
-          Walls
-        </div>
-
-        <div style={valueStyle}>
-          {summary.wallCount}
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <Camera
-            size={14}
-            color="#39ff14"
-          />
-          Cameras
-        </div>
-
-        <div style={valueStyle}>
-          {summary.cameraCount}
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <Database
-            size={14}
-            color="#4fc3f7"
-          />
-          Products assigned
-        </div>
-
-        <div
-          style={{
-            ...valueStyle,
-            color:
-              summary.unassignedCameraCount > 0
-                ? "#ffb74d"
-                : "#39ff14",
-          }}
-        >
-          {assignmentText}
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <WalletCards
-            size={14}
-            color="#ffd54f"
-          />
-          Camera cost
-        </div>
-
-        <div
-          style={{
-            ...valueStyle,
-            color: "#ffd54f",
-          }}
-        >
-          {formatZAR(
-            summary.totalCameraCost,
-          )}
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <Zap
-            size={14}
-            color="#ffb74d"
-          />
-          Camera power
-        </div>
-
-        <div style={valueStyle}>
-          {summary.totalCameraPower.toFixed(1)} W
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <Server
-            size={14}
-            color="#4fc3f7"
-          />
-          Recommended NVR
-        </div>
-
-        <div style={valueStyle}>
-          {summary.recommendedNVRChannels > 0
-            ? `${summary.recommendedNVRChannels} ch`
-            : "None"}
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <PlugZap
-            size={14}
-            color="#39ff14"
-          />
-          PoE switch
-        </div>
-
-        <div style={valueStyle}>
-          {summary.recommendedPoESwitchPorts > 0
-            ? `${summary.recommendedPoESwitchPorts} port`
-            : "None"}
-        </div>
-      </div>
-
-      <div style={rowStyle}>
-        <div style={labelStyle}>
-          <Zap
-            size={14}
-            color="#ff8a80"
-          />
-          PoE budget
-        </div>
-
-        <div style={valueStyle}>
-          {summary.recommendedPoEPowerBudget} W
-        </div>
-      </div>
-
-      <div
-        style={{
-          ...rowStyle,
-          borderBottom: "none",
-        }}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
+      <Card
+        title="Cameras"
+        icon={<Camera size={15} />}
+        accent="#39ff14"
       >
-        <div style={labelStyle}>
-          <HardDrive
-            size={14}
-            color="#b388ff"
-          />
-          Storage estimate
-        </div>
+        <Row
+          label="Installed"
+          value={summary.cameraCount}
+        />
 
-        <div
-          style={{
-            ...valueStyle,
-            color: "#b388ff",
-          }}
-        >
-          {summary.estimatedStorageTB.toFixed(
-            2,
-          )}{" "}
-          TB
-        </div>
-      </div>
+        <Row
+          label="Assigned to Hub"
+          value={bom.assignedCameraCount}
+          accent="#39ff14"
+        />
 
-      <div
-        style={{
-          marginTop: 10,
-          padding: 9,
-          background: "#111419",
-          border: "1px solid #292f38",
-          borderRadius: 7,
-          color: "#747f8d",
-          fontSize: 9,
-          lineHeight: 1.5,
-        }}
+        <Row
+          label="Unassigned"
+          value={bom.unassignedCameraCount}
+          accent={
+            bom.unassignedCameraCount > 0
+              ? '#ffd54f'
+              : '#ffffff'
+          }
+        />
+
+        <Row
+          label="Average Resolution"
+          value={`${summary.averageResolutionMP.toFixed(
+            1,
+          )} MP`}
+        />
+
+        <Row
+          label="Total Camera Power"
+          value={`${summary.totalCameraPower.toFixed(
+            1,
+          )} W`}
+        />
+      </Card>
+
+      <Card
+        title="Cabling"
+        icon={<Cable size={15} />}
+        accent="#4fc3f7"
       >
-        Estimate: 30 days, 15 FPS,
-        H.265 and continuous recording.
-      </div>
+        <Row
+          label="CAT6 Required"
+          value={`${bom.totalCableMetres} m`}
+          accent="#39ff14"
+        />
+
+        <Row
+          label="305 m Cable Drums"
+          value={bom.cableDrums}
+        />
+
+        <Row
+          label="RJ45 Connectors"
+          value={bom.rj45Connectors}
+        />
+      </Card>
+
+      <Card
+        title="Infrastructure"
+        icon={<Network size={15} />}
+        accent="#ffd54f"
+      >
+        <Row
+          label="Switch Ports"
+          value={bom.switchPorts}
+        />
+
+        <Row
+          label="24-Port Patch Panels"
+          value={bom.patchPanels24}
+        />
+
+        <Row
+          label="Faceplates"
+          value={bom.faceplates}
+        />
+
+        <Row
+          label="Equipment Hubs"
+          value={equipmentHubs.length}
+        />
+      </Card>
+
+      <Card
+        title="Recording"
+        icon={<HardDrive size={15} />}
+        accent="#b388ff"
+      >
+        <Row
+          label="Estimated Storage"
+          value={`${summary.estimatedStorageTB.toFixed(
+            1,
+          )} TB`}
+        />
+      </Card>
+
+      <Card
+        title="Labour"
+        icon={<Clock3 size={15} />}
+        accent="#39ff14"
+      >
+        <Row
+          label="Estimated Hours"
+          value={bom.labourHours}
+          accent="#39ff14"
+        />
+      </Card>
     </div>
-  );
+  )
 }

@@ -11,6 +11,7 @@ import {
   ChartNoAxesCombined,
   HardDrive,
   Landmark,
+  Network,
   Package,
   PanelsTopLeft,
   Video,
@@ -19,6 +20,8 @@ import {
 
 import CameraLibrary from '../core/CameraLibrary'
 
+import CameraRecommendationPanel from './CameraRecommendationPanel'
+import DesignAnalysisPanel from './DesignAnalysisPanel'
 import FinancePanel from './FinancePanel'
 import InspectorSection from './InspectorSection'
 import ProjectSummary from './ProjectSummary'
@@ -88,6 +91,26 @@ const placeholderStyle: CSSProperties = {
   lineHeight: 1.5,
 }
 
+const infoBoxStyle: CSSProperties = {
+  padding: '9px 10px',
+  background: '#111419',
+  border: '1px solid #292f38',
+  borderRadius: 6,
+  color: '#c1c7d0',
+  fontSize: 11,
+}
+
+const deleteButtonStyle: CSSProperties = {
+  width: '100%',
+  padding: '10px 12px',
+  background: '#3a1919',
+  color: '#ff8a8a',
+  border: '1px solid #6b2929',
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontWeight: 800,
+}
+
 export default function Properties(): JSX.Element {
   const [
     cameraLibraryOpen,
@@ -112,6 +135,21 @@ export default function Properties(): JSX.Element {
         ),
     )
 
+  const selectedEquipmentHub =
+    useDesignerStore(
+      (state) =>
+        state.equipmentHubs.find(
+          (hub) =>
+            hub.selected,
+        ),
+    )
+
+  const equipmentHubs =
+    useDesignerStore(
+      (state) =>
+        state.equipmentHubs,
+    )
+
   const beginCameraEdit =
     useDesignerStore(
       (state) =>
@@ -130,17 +168,49 @@ export default function Properties(): JSX.Element {
         state.finishCameraEdit,
     )
 
+  const beginEquipmentHubEdit =
+    useDesignerStore(
+      (state) =>
+        state.beginEquipmentHubEdit,
+    )
+
+  const updateEquipmentHubProperties =
+    useDesignerStore(
+      (state) =>
+        state.updateEquipmentHubProperties,
+    )
+
+  const finishEquipmentHubEdit =
+    useDesignerStore(
+      (state) =>
+        state.finishEquipmentHubEdit,
+    )
+
   const deleteSelectedObject =
     useDesignerStore(
       (state) =>
         state.deleteSelectedObject,
     )
 
-  function handleInputFocus(): void {
-    beginCameraEdit()
+  function highlightInput(
+    event:
+      | FocusEvent<HTMLInputElement>
+      | FocusEvent<HTMLSelectElement>,
+  ): void {
+    event.currentTarget.style.borderColor =
+      '#39ff14'
   }
 
-  function handleInputBlur(
+  function handleCameraFocus(
+    event:
+      | FocusEvent<HTMLInputElement>
+      | FocusEvent<HTMLSelectElement>,
+  ): void {
+    beginCameraEdit()
+    highlightInput(event)
+  }
+
+  function handleCameraInputBlur(
     event: FocusEvent<HTMLInputElement>,
   ): void {
     event.currentTarget.style.borderColor =
@@ -149,19 +219,88 @@ export default function Properties(): JSX.Element {
     finishCameraEdit()
   }
 
-  function handleFocusHighlight(
+  function handleCameraSelectBlur(
+    event: FocusEvent<HTMLSelectElement>,
+  ): void {
+    event.currentTarget.style.borderColor =
+      '#3a414d'
+
+    finishCameraEdit()
+  }
+
+  function handleHubFocus(
+    event:
+      | FocusEvent<HTMLInputElement>
+      | FocusEvent<HTMLSelectElement>,
+  ): void {
+    beginEquipmentHubEdit()
+    highlightInput(event)
+  }
+
+  function handleHubInputBlur(
     event: FocusEvent<HTMLInputElement>,
   ): void {
     event.currentTarget.style.borderColor =
-      '#39ff14'
+      '#3a414d'
+
+    finishEquipmentHubEdit()
+  }
+
+  function handleHubSelectBlur(
+    event: FocusEvent<HTMLSelectElement>,
+  ): void {
+    event.currentTarget.style.borderColor =
+      '#3a414d'
+
+    finishEquipmentHubEdit()
+  }
+
+  function assignCameraToHub(
+    cameraId: string,
+    hubId: string | null,
+  ): void {
+    beginCameraEdit()
+
+    useDesignerStore.setState(
+      (state) => ({
+        cameras:
+          state.cameras.map(
+            (camera) => {
+              if (
+                camera.id !==
+                cameraId
+              ) {
+                return camera
+              }
+
+              return {
+                ...camera,
+                assignedHubId:
+                  hubId,
+              }
+            },
+          ),
+      }),
+    )
+
+    finishCameraEdit()
   }
 
   const selectionTitle =
     selectedCamera
       ? selectedCamera.name
-      : selectedWall
-        ? 'Wall'
-        : 'No object selected'
+      : selectedEquipmentHub
+        ? selectedEquipmentHub.name
+        : selectedWall
+          ? 'Wall'
+          : 'No object selected'
+
+  const hasSelectedObject =
+    Boolean(
+      selectedWall ||
+      selectedCamera ||
+      selectedEquipmentHub,
+    )
 
   return (
     <>
@@ -177,6 +316,8 @@ export default function Properties(): JSX.Element {
           overflowX: 'hidden',
         }}
       >
+        {/* HEADER */}
+
         <div
           style={{
             position: 'sticky',
@@ -226,12 +367,20 @@ export default function Properties(): JSX.Element {
             padding: 12,
           }}
         >
+          {/* SELECTED OBJECT */}
+
           <InspectorSection
             title="Selected Object"
             subtitle="Object properties and controls"
             icon={
               selectedCamera ? (
-                <Camera size={15} />
+                <Camera
+                  size={15}
+                />
+              ) : selectedEquipmentHub ? (
+                <Network
+                  size={15}
+                />
               ) : (
                 <PanelsTopLeft
                   size={15}
@@ -241,25 +390,28 @@ export default function Properties(): JSX.Element {
             accentColor={
               selectedCamera
                 ? '#39ff14'
-                : selectedWall
-                  ? '#ffd54f'
-                  : '#68717d'
+                : selectedEquipmentHub
+                  ? '#4fc3f7'
+                  : selectedWall
+                    ? '#ffd54f'
+                    : '#68717d'
             }
             defaultOpen
           >
-            {!selectedWall &&
-              !selectedCamera && (
-                <div
-                  style={
-                    placeholderStyle
-                  }
-                >
-                  Select a wall or
-                  camera on the canvas
-                  to inspect and edit
-                  it.
-                </div>
-              )}
+            {!hasSelectedObject && (
+              <div
+                style={
+                  placeholderStyle
+                }
+              >
+                Select a wall,
+                camera or equipment
+                hub on the canvas to
+                inspect and edit it.
+              </div>
+            )}
+
+            {/* WALL */}
 
             {selectedWall && (
               <>
@@ -278,7 +430,7 @@ export default function Properties(): JSX.Element {
 
                   <div
                     style={
-                      inputStyle
+                      infoBoxStyle
                     }
                   >
                     Wall
@@ -300,7 +452,7 @@ export default function Properties(): JSX.Element {
 
                   <div
                     style={
-                      inputStyle
+                      infoBoxStyle
                     }
                   >
                     {
@@ -324,7 +476,7 @@ export default function Properties(): JSX.Element {
 
                   <div
                     style={
-                      inputStyle
+                      infoBoxStyle
                     }
                   >
                     {
@@ -349,7 +501,7 @@ export default function Properties(): JSX.Element {
 
                   <div
                     style={
-                      inputStyle
+                      infoBoxStyle
                     }
                   >
                     {
@@ -364,25 +516,301 @@ export default function Properties(): JSX.Element {
                   onClick={
                     deleteSelectedObject
                   }
-                  style={{
-                    width: '100%',
-                    padding:
-                      '10px 12px',
-                    background:
-                      '#3a1919',
-                    color:
-                      '#ff8a8a',
-                    border:
-                      '1px solid #6b2929',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontWeight: 800,
-                  }}
+                  style={
+                    deleteButtonStyle
+                  }
                 >
                   Delete Wall
                 </button>
               </>
             )}
+
+            {/* EQUIPMENT HUB */}
+
+            {selectedEquipmentHub && (
+              <>
+                <div
+                  style={
+                    fieldStyle
+                  }
+                >
+                  <span
+                    style={
+                      labelStyle
+                    }
+                  >
+                    Object Type
+                  </span>
+
+                  <div
+                    style={
+                      infoBoxStyle
+                    }
+                  >
+                    Equipment Hub
+                  </div>
+                </div>
+
+                <div
+                  style={
+                    fieldStyle
+                  }
+                >
+                  <label
+                    style={
+                      labelStyle
+                    }
+                  >
+                    Hub Name
+                  </label>
+
+                  <input
+                    type="text"
+                    value={
+                      selectedEquipmentHub.name
+                    }
+                    style={
+                      inputStyle
+                    }
+                    onFocus={
+                      handleHubFocus
+                    }
+                    onBlur={
+                      handleHubInputBlur
+                    }
+                    onChange={(
+                      event,
+                    ): void => {
+                      updateEquipmentHubProperties(
+                        selectedEquipmentHub.id,
+                        {
+                          name:
+                            event.target.value,
+                        },
+                      )
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={
+                    fieldStyle
+                  }
+                >
+                  <label
+                    style={
+                      labelStyle
+                    }
+                  >
+                    Hub Type
+                  </label>
+
+                  <select
+                    value={
+                      selectedEquipmentHub.type
+                    }
+                    style={
+                      inputStyle
+                    }
+                    onFocus={
+                      handleHubFocus
+                    }
+                    onBlur={
+                      handleHubSelectBlur
+                    }
+                    onChange={(
+                      event,
+                    ): void => {
+                      updateEquipmentHubProperties(
+                        selectedEquipmentHub.id,
+                        {
+                          type:
+                            event.target.value as
+                              | 'rack'
+                              | 'cabinet'
+                              | 'nvr',
+                        },
+                      )
+                    }}
+                  >
+                    <option value="rack">
+                      Rack
+                    </option>
+
+                    <option value="cabinet">
+                      Cabinet
+                    </option>
+
+                    <option value="nvr">
+                      NVR
+                    </option>
+                  </select>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns:
+                      '1fr 1fr',
+                    gap: 9,
+                    marginBottom: 14,
+                  }}
+                >
+                  <div>
+                    <label
+                      style={
+                        labelStyle
+                      }
+                    >
+                      X Position
+                    </label>
+
+                    <input
+                      type="number"
+                      value={
+                        selectedEquipmentHub.position.x
+                      }
+                      step={
+                        GRID_SIZE
+                      }
+                      style={
+                        inputStyle
+                      }
+                      onFocus={
+                        handleHubFocus
+                      }
+                      onBlur={
+                        handleHubInputBlur
+                      }
+                      onChange={(
+                        event,
+                      ): void => {
+                        const value =
+                          Number(
+                            event.target.value,
+                          )
+
+                        if (
+                          Number.isNaN(
+                            value,
+                          )
+                        ) {
+                          return
+                        }
+
+                        updateEquipmentHubProperties(
+                          selectedEquipmentHub.id,
+                          {
+                            position: {
+                              x:
+                                snapToGrid(
+                                  value,
+                                ),
+
+                              y:
+                                selectedEquipmentHub.position.y,
+                            },
+                          },
+                        )
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      style={
+                        labelStyle
+                      }
+                    >
+                      Y Position
+                    </label>
+
+                    <input
+                      type="number"
+                      value={
+                        selectedEquipmentHub.position.y
+                      }
+                      step={
+                        GRID_SIZE
+                      }
+                      style={
+                        inputStyle
+                      }
+                      onFocus={
+                        handleHubFocus
+                      }
+                      onBlur={
+                        handleHubInputBlur
+                      }
+                      onChange={(
+                        event,
+                      ): void => {
+                        const value =
+                          Number(
+                            event.target.value,
+                          )
+
+                        if (
+                          Number.isNaN(
+                            value,
+                          )
+                        ) {
+                          return
+                        }
+
+                        updateEquipmentHubProperties(
+                          selectedEquipmentHub.id,
+                          {
+                            position: {
+                              x:
+                                selectedEquipmentHub.position.x,
+
+                              y:
+                                snapToGrid(
+                                  value,
+                                ),
+                            },
+                          },
+                        )
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    ...placeholderStyle,
+                    marginBottom: 14,
+                    border:
+                      '1px solid #234b5a',
+                    background:
+                      '#10232a',
+                    color:
+                      '#82d9f7',
+                  }}
+                >
+                  Cameras assigned to
+                  this hub are used for
+                  cable lengths, PoE
+                  utilisation and rack
+                  calculations.
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    deleteSelectedObject
+                  }
+                  style={
+                    deleteButtonStyle
+                  }
+                >
+                  Delete Equipment Hub
+                </button>
+              </>
+            )}
+
+            {/* CAMERA */}
 
             {selectedCamera && (
               <>
@@ -422,8 +850,7 @@ export default function Properties(): JSX.Element {
                       labelStyle
                     }
                   >
-                    Camera Name /
-                    Model
+                    Camera Name
                   </label>
 
                   <input
@@ -434,17 +861,11 @@ export default function Properties(): JSX.Element {
                     style={
                       inputStyle
                     }
-                    onFocus={(
-                      event,
-                    ): void => {
-                      handleInputFocus()
-
-                      handleFocusHighlight(
-                        event,
-                      )
-                    }}
+                    onFocus={
+                      handleCameraFocus
+                    }
                     onBlur={
-                      handleInputBlur
+                      handleCameraInputBlur
                     }
                     onChange={(
                       event,
@@ -453,13 +874,63 @@ export default function Properties(): JSX.Element {
                         selectedCamera.id,
                         {
                           name:
-                            event
-                              .target
-                              .value,
+                            event.target.value,
                         },
                       )
                     }}
                   />
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns:
+                      '1fr 1fr',
+                    gap: 9,
+                    marginBottom: 14,
+                  }}
+                >
+                  <div>
+                    <span
+                      style={
+                        labelStyle
+                      }
+                    >
+                      Manufacturer
+                    </span>
+
+                    <div
+                      style={
+                        infoBoxStyle
+                      }
+                    >
+                      {
+                        selectedCamera.manufacturer ??
+                        'Unassigned'
+                      }
+                    </div>
+                  </div>
+
+                  <div>
+                    <span
+                      style={
+                        labelStyle
+                      }
+                    >
+                      Model
+                    </span>
+
+                    <div
+                      style={
+                        infoBoxStyle
+                      }
+                    >
+                      {
+                        selectedCamera.model ??
+                        'Unassigned'
+                      }
+                    </div>
+                  </div>
                 </div>
 
                 <div
@@ -483,8 +954,7 @@ export default function Properties(): JSX.Element {
                     <input
                       type="number"
                       value={
-                        selectedCamera
-                          .position.x
+                        selectedCamera.position.x
                       }
                       step={
                         GRID_SIZE
@@ -492,26 +962,18 @@ export default function Properties(): JSX.Element {
                       style={
                         inputStyle
                       }
-                      onFocus={(
-                        event,
-                      ): void => {
-                        handleInputFocus()
-
-                        handleFocusHighlight(
-                          event,
-                        )
-                      }}
+                      onFocus={
+                        handleCameraFocus
+                      }
                       onBlur={
-                        handleInputBlur
+                        handleCameraInputBlur
                       }
                       onChange={(
                         event,
                       ): void => {
                         const value =
                           Number(
-                            event
-                              .target
-                              .value,
+                            event.target.value,
                           )
 
                         if (
@@ -525,16 +987,15 @@ export default function Properties(): JSX.Element {
                         updateCameraProperties(
                           selectedCamera.id,
                           {
-                            position:
-                              {
-                                x: snapToGrid(
+                            position: {
+                              x:
+                                snapToGrid(
                                   value,
                                 ),
-                                y:
-                                  selectedCamera
-                                    .position
-                                    .y,
-                              },
+
+                              y:
+                                selectedCamera.position.y,
+                            },
                           },
                         )
                       }}
@@ -553,8 +1014,7 @@ export default function Properties(): JSX.Element {
                     <input
                       type="number"
                       value={
-                        selectedCamera
-                          .position.y
+                        selectedCamera.position.y
                       }
                       step={
                         GRID_SIZE
@@ -562,26 +1022,18 @@ export default function Properties(): JSX.Element {
                       style={
                         inputStyle
                       }
-                      onFocus={(
-                        event,
-                      ): void => {
-                        handleInputFocus()
-
-                        handleFocusHighlight(
-                          event,
-                        )
-                      }}
+                      onFocus={
+                        handleCameraFocus
+                      }
                       onBlur={
-                        handleInputBlur
+                        handleCameraInputBlur
                       }
                       onChange={(
                         event,
                       ): void => {
                         const value =
                           Number(
-                            event
-                              .target
-                              .value,
+                            event.target.value,
                           )
 
                         if (
@@ -595,20 +1047,112 @@ export default function Properties(): JSX.Element {
                         updateCameraProperties(
                           selectedCamera.id,
                           {
-                            position:
-                              {
-                                x:
-                                  selectedCamera
-                                    .position
-                                    .x,
-                                y: snapToGrid(
+                            position: {
+                              x:
+                                selectedCamera.position.x,
+
+                              y:
+                                snapToGrid(
                                   value,
                                 ),
-                              },
+                            },
                           },
                         )
                       }}
                     />
+                  </div>
+                </div>
+
+                <div
+                  style={
+                    fieldStyle
+                  }
+                >
+                  <label
+                    style={
+                      labelStyle
+                    }
+                  >
+                    Assigned Equipment Hub
+                  </label>
+
+                  <select
+                    value={
+                      selectedCamera.assignedHubId ??
+                      ''
+                    }
+                    style={{
+                      ...inputStyle,
+
+                      borderColor:
+                        selectedCamera.assignedHubId
+                          ? '#2f7a34'
+                          : '#66501f',
+
+                      color:
+                        selectedCamera.assignedHubId
+                          ? '#bfffb2'
+                          : '#ffd878',
+                    }}
+                    onFocus={
+                      highlightInput
+                    }
+                    onBlur={
+                      handleCameraSelectBlur
+                    }
+                    onChange={(
+                      event,
+                    ): void => {
+                      const hubId =
+                        event.target.value
+
+                      assignCameraToHub(
+                        selectedCamera.id,
+
+                        hubId === ''
+                          ? null
+                          : hubId,
+                      )
+                    }}
+                  >
+                    <option value="">
+                      Unassigned
+                    </option>
+
+                    {equipmentHubs.map(
+                      (hub) => (
+                        <option
+                          key={
+                            hub.id
+                          }
+                          value={
+                            hub.id
+                          }
+                        >
+                          {hub.name}
+                          {' — '}
+                          {hub.type}
+                        </option>
+                      ),
+                    )}
+                  </select>
+
+                  <div
+                    style={{
+                      marginTop: 6,
+                      color:
+                        selectedCamera.assignedHubId
+                          ? '#5f9d5f'
+                          : '#8b7442',
+                      fontSize: 9,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {selectedCamera.assignedHubId
+                      ? 'Camera is linked to an equipment hub and ready for cable calculations.'
+                      : equipmentHubs.length === 0
+                        ? 'Place an Equipment Hub before assigning this camera.'
+                        : 'Select the rack, cabinet or NVR serving this camera.'}
                   </div>
                 </div>
 
@@ -629,32 +1173,26 @@ export default function Properties(): JSX.Element {
                     type="number"
                     min={0}
                     max={359}
-                    value={Math.round(
-                      selectedCamera.rotation,
-                    )}
+                    value={
+                      Math.round(
+                        selectedCamera.rotation,
+                      )
+                    }
                     style={
                       inputStyle
                     }
-                    onFocus={(
-                      event,
-                    ): void => {
-                      handleInputFocus()
-
-                      handleFocusHighlight(
-                        event,
-                      )
-                    }}
+                    onFocus={
+                      handleCameraFocus
+                    }
                     onBlur={
-                      handleInputBlur
+                      handleCameraInputBlur
                     }
                     onChange={(
                       event,
                     ): void => {
                       const value =
                         Number(
-                          event
-                            .target
-                            .value,
+                          event.target.value,
                         )
 
                       if (
@@ -669,9 +1207,13 @@ export default function Properties(): JSX.Element {
                         selectedCamera.id,
                         {
                           rotation:
-                            ((value %
-                              360) +
-                              360) %
+                            (
+                              (
+                                value %
+                                360
+                              ) +
+                              360
+                            ) %
                             360,
                         },
                       )
@@ -681,6 +1223,8 @@ export default function Properties(): JSX.Element {
               </>
             )}
           </InspectorSection>
+
+          {/* CAMERA COVERAGE */}
 
           {selectedCamera && (
             <InspectorSection
@@ -719,12 +1263,12 @@ export default function Properties(): JSX.Element {
                     accentColor:
                       '#39ff14',
                   }}
-                  onFocus={
-                    handleInputFocus
-                  }
-                  onBlur={
-                    finishCameraEdit
-                  }
+                  onFocus={(): void => {
+                    beginCameraEdit()
+                  }}
+                  onBlur={(): void => {
+                    finishCameraEdit()
+                  }}
                   onChange={(
                     event,
                   ): void => {
@@ -734,9 +1278,7 @@ export default function Properties(): JSX.Element {
                         fieldOfView:
                           clamp(
                             Number(
-                              event
-                                .target
-                                .value,
+                              event.target.value,
                             ),
                             10,
                             170,
@@ -788,12 +1330,12 @@ export default function Properties(): JSX.Element {
                     accentColor:
                       '#39ff14',
                   }}
-                  onFocus={
-                    handleInputFocus
-                  }
-                  onBlur={
-                    finishCameraEdit
-                  }
+                  onFocus={(): void => {
+                    beginCameraEdit()
+                  }}
+                  onBlur={(): void => {
+                    finishCameraEdit()
+                  }}
                   onChange={(
                     event,
                   ): void => {
@@ -803,9 +1345,7 @@ export default function Properties(): JSX.Element {
                         range:
                           clamp(
                             Number(
-                              event
-                                .target
-                                .value,
+                              event.target.value,
                             ),
                             1,
                             100,
@@ -837,25 +1377,39 @@ export default function Properties(): JSX.Element {
                 onClick={
                   deleteSelectedObject
                 }
-                style={{
-                  width: '100%',
-                  padding:
-                    '10px 12px',
-                  background:
-                    '#3a1919',
-                  color:
-                    '#ff8a8a',
-                  border:
-                    '1px solid #6b2929',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontWeight: 800,
-                }}
+                style={
+                  deleteButtonStyle
+                }
               >
                 Delete Camera
               </button>
             </InspectorSection>
           )}
+
+          {/* SMART CAMERA RECOMMENDATION */}
+
+          {selectedCamera && (
+            <InspectorSection
+              title="Smart Camera Recommendation"
+              subtitle="AI-powered camera selection"
+              icon={
+                <Bot
+                  size={15}
+                />
+              }
+              accentColor="#39ff14"
+              badge="SMART"
+              defaultOpen
+            >
+              <CameraRecommendationPanel
+                camera={
+                  selectedCamera
+                }
+              />
+            </InspectorSection>
+          )}
+
+          {/* PROJECT SUMMARY */}
 
           <InspectorSection
             title="Project Summary"
@@ -872,6 +1426,8 @@ export default function Properties(): JSX.Element {
             <ProjectSummary />
           </InspectorSection>
 
+          {/* SMART EQUIPMENT */}
+
           <InspectorSection
             title="Equipment"
             subtitle="Smart equipment sizing"
@@ -887,6 +1443,8 @@ export default function Properties(): JSX.Element {
             <SmartEquipmentPanel />
           </InspectorSection>
 
+          {/* FINANCE */}
+
           <InspectorSection
             title="Finance"
             subtitle="Cash and rental options"
@@ -901,6 +1459,8 @@ export default function Properties(): JSX.Element {
           >
             <FinancePanel />
           </InspectorSection>
+
+          {/* STORAGE */}
 
           <InspectorSection
             title="Storage"
@@ -925,6 +1485,8 @@ export default function Properties(): JSX.Element {
               appear here.
             </div>
           </InspectorSection>
+
+          {/* COMMERCIAL */}
 
           <InspectorSection
             title="Commercial"
@@ -951,28 +1513,21 @@ export default function Properties(): JSX.Element {
             </div>
           </InspectorSection>
 
+          {/* AI ASSISTANT */}
+
           <InspectorSection
             title="AI Assistant"
-            subtitle="Design review and recommendations"
+            subtitle="Live design review and recommendations"
             icon={
               <Bot
                 size={15}
               />
             }
             accentColor="#4fc3f7"
-            defaultOpen={false}
+            badge="LIVE"
+            defaultOpen
           >
-            <div
-              style={
-                placeholderStyle
-              }
-            >
-              Automated coverage
-              reviews, equipment
-              recommendations and
-              design warnings will
-              appear here.
-            </div>
+            <DesignAnalysisPanel />
           </InspectorSection>
         </div>
       </aside>

@@ -2,29 +2,36 @@ export type Tool =
   | "select"
   | "wall"
   | "door"
-  | "camera";
+  | "camera"
+  | "equipmentHub";
 
-export interface Point {
-  x: number;
-  y: number;
-}
+export type {
+  Point,
+} from "../../models/geometry";
 
-export interface Wall {
-  id: string;
-  start: Point;
-  end: Point;
-  thickness: number;
-  selected: boolean;
-  material: "Brick" | "Drywall";
-  height: number;
-}
+export type {
+  Wall,
+  WallMaterial,
+} from "../../models/wall";
 
-export interface Camera {
-  id: string;
-  position: Point;
-  rotation: number;
-  selected: boolean;
-  name: string;
-  fieldOfView: number;
-  range: number;
-}
+export type {
+  Camera,
+} from "../../models/camera";
+
+export type {
+  EquipmentHub,
+  EquipmentHubType,
+} from "../../models/equipmentHub";
+
+export type {
+  CableRoute,
+  CableRoutePoint,
+  CableMeasurement,
+  CableType,
+} from "../../models/cable";
+
+export type {
+  ProjectBuilding,
+  ProjectFloor,
+  SiteForgeProjectModel,
+} from "../../models/project";
