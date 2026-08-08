@@ -135,7 +135,7 @@ export function openProjectPicker(): void {
       void openProjectFromFile(file)
         .catch((error: unknown) => {
           console.error(
-            'Unable to open SiteForge project.',
+            'Unable to open SentryCAD project.',
             error,
           )
 
@@ -145,7 +145,7 @@ export function openProjectPicker(): void {
               : 'Unknown project file error.'
 
           window.alert(
-            `SiteForge could not open the project.\n\n${message}`,
+            `SentryCAD could not open the project.\n\n${message}`,
           )
         })
         .finally((): void => {

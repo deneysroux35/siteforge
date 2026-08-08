@@ -153,7 +153,7 @@ export default function NewProjectDialog({
                   'uppercase',
               }}
             >
-              SiteForge Project
+              SentryCAD Project
             </div>
 
             <h2

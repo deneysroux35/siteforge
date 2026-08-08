@@ -191,7 +191,7 @@ export default function Dashboard(): JSX.Element {
                   'uppercase',
               }}
             >
-              SiteForge Professional
+              SentryCAD Professional
             </div>
 
             <h1

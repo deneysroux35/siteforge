@@ -277,7 +277,7 @@ export default function QuoteBuilder(): JSX.Element {
               />
             }
             title="Equipment"
-            subtitle="Live equipment from the active SiteForge design"
+            subtitle="Live equipment from the active SentryCAD design"
             badge="AUTO"
           />
 

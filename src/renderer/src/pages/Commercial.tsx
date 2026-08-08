@@ -71,7 +71,7 @@ export default function Commercial(): JSX.Element {
                 size={14}
               />
 
-              SiteForge Commercial
+              SentryCAD Commercial
             </div>
 
             <h1

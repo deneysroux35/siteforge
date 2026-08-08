@@ -259,7 +259,7 @@ export function parseProjectFile(
     parsed = JSON.parse(json)
   } catch {
     throw new Error(
-      'The selected file does not contain valid SiteForge project data.',
+      'The selected file does not contain valid SentryCAD project data.',
     )
   }
 
@@ -267,7 +267,7 @@ export function parseProjectFile(
     !validateProjectFile(parsed)
   ) {
     throw new Error(
-      'The selected file is not a valid SiteForge project.',
+      'The selected file is not a valid SentryCAD project.',
     )
   }
 
@@ -306,7 +306,7 @@ export function loadProjectLocally():
     )
   } catch (error) {
     console.error(
-      'Unable to load the saved SiteForge project.',
+      'Unable to load the saved SentryCAD project.',
       error,
     )
 
@@ -345,7 +345,7 @@ export function createSafeProjectFilename(
 
   return `${
     safeName ||
-    'siteforge-project'
+    'sentrycad-project'
   }.siteforge`
 }
 
@@ -380,11 +380,15 @@ export function downloadProjectFile(
       projectFile.project.name,
     )
 
-  document.body.appendChild(link)
+  document.body.appendChild(
+    link,
+  )
 
   link.click()
 
-  document.body.removeChild(link)
+  document.body.removeChild(
+    link,
+  )
 
   URL.revokeObjectURL(
     objectUrl,

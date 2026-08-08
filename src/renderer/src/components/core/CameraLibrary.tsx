@@ -986,7 +986,7 @@ export default function CameraLibrary({
           </span>
 
           <span>
-            SiteForge Product Library
+            SentryCAD Product Library
           </span>
         </div>
       </div>

@@ -134,7 +134,7 @@ export default function Designer(): JSX.Element {
   useEffect((): void => {
     document.title = `${project.name}${
       isDirty ? ' *' : ''
-    } - SiteForge`
+    } - SentryCAD`
   }, [
     project.name,
     isDirty,

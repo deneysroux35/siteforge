@@ -190,7 +190,7 @@ export default function CommandPalette({
         id: "save",
         label: "Save Project",
         description:
-          "Save the current SiteForge project",
+          "Save the current SentryCAD project",
         keywords: [
           "save",
           "project",
@@ -201,7 +201,7 @@ export default function CommandPalette({
         icon: Save,
         action: () => {
           window.alert(
-            "Project saving will be connected to the new SiteForge project system next.",
+            "Project saving will be connected to the new SentryCAD project system next.",
           );
         },
       },
@@ -209,7 +209,7 @@ export default function CommandPalette({
         id: "open",
         label: "Open Project",
         description:
-          "Open an existing SiteForge project",
+          "Open an existing SentryCAD project",
         keywords: [
           "open",
           "load",
@@ -220,7 +220,7 @@ export default function CommandPalette({
         icon: FolderOpen,
         action: () => {
           window.alert(
-            "Project opening will be connected to the new SiteForge project system next.",
+            "Project opening will be connected to the new SentryCAD project system next.",
           );
         },
       },
@@ -258,7 +258,7 @@ export default function CommandPalette({
         icon: FileText,
         action: () => {
           window.alert(
-            "The SiteForge quotation engine is coming soon.",
+            "The SentryCAD quotation engine is coming soon.",
           );
         },
       },
@@ -266,7 +266,7 @@ export default function CommandPalette({
         id: "settings",
         label: "Application Settings",
         description:
-          "Configure SiteForge preferences",
+          "Configure SentryCAD preferences",
         keywords: [
           "settings",
           "preferences",
@@ -471,7 +471,7 @@ export default function CommandPalette({
             ref={inputRef}
             type="text"
             value={search}
-            placeholder="Search SiteForge commands..."
+            placeholder="Search SentryCAD commands..."
             onChange={(event) =>
               setSearch(event.target.value)
             }
@@ -694,7 +694,7 @@ export default function CommandPalette({
           </span>
 
           <span>
-            SiteForge Command Centre
+            SentryCAD Command Centre
           </span>
         </footer>
       </div>

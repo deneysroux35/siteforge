@@ -56,7 +56,7 @@ export interface ProjectCableEstimate {
 export const DEFAULT_CABLE_SETTINGS:
   CableEstimateSettings = {
     /*
-     * SiteForge's drawing grid is
+     * SentryCAD's drawing grid is
      * currently 25 px.
      *
      * For the first cable engine
