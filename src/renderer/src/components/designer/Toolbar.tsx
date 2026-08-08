@@ -1,6 +1,7 @@
 import {
   useEffect,
   type CSSProperties,
+  type MouseEvent,
 } from 'react'
 
 import {
@@ -61,14 +62,16 @@ const tools: ToolDefinition[] = [
 
 const dockButtonStyle: CSSProperties = {
   width: 58,
-  height: 58,
+  height: 60,
+  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 4,
+  gap: 5,
   borderRadius: 9,
   cursor: 'pointer',
+  outline: 'none',
 
   transition:
     'background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease',
@@ -117,24 +120,28 @@ export default function Toolbar() {
         pressedKey === 'v'
       ) {
         setTool('select')
+        return
       }
 
       if (
         pressedKey === 'w'
       ) {
         setTool('wall')
+        return
       }
 
       if (
         pressedKey === 'd'
       ) {
         setTool('door')
+        return
       }
 
       if (
         pressedKey === 'c'
       ) {
         setTool('camera')
+        return
       }
 
       if (
@@ -159,6 +166,50 @@ export default function Toolbar() {
     }
   }, [setTool])
 
+  function handleMouseEnter(
+    event:
+      MouseEvent<HTMLButtonElement>,
+    active: boolean,
+  ): void {
+    if (active) {
+      return
+    }
+
+    event.currentTarget.style.background =
+      '#20262e'
+
+    event.currentTarget.style.borderColor =
+      '#414b58'
+
+    event.currentTarget.style.color =
+      '#ffffff'
+
+    event.currentTarget.style.transform =
+      'translateY(-1px)'
+  }
+
+  function handleMouseLeave(
+    event:
+      MouseEvent<HTMLButtonElement>,
+    active: boolean,
+  ): void {
+    if (active) {
+      return
+    }
+
+    event.currentTarget.style.background =
+      'transparent'
+
+    event.currentTarget.style.borderColor =
+      'transparent'
+
+    event.currentTarget.style.color =
+      '#aeb7c2'
+
+    event.currentTarget.style.transform =
+      'translateY(0)'
+  }
+
   return (
     <aside
       style={{
@@ -169,20 +220,27 @@ export default function Toolbar() {
         flexDirection: 'column',
         alignItems: 'center',
 
-        gap: 8,
+        gap: 7,
 
-        padding: '12px 8px',
+        padding:
+          '11px 8px 10px',
 
-        background: '#14171c',
+        background:
+          'linear-gradient(180deg, #12161b 0%, #0f1216 100%)',
 
         borderRight:
-          '1px solid #2e3440',
+          '1px solid #303744',
+
+        boxShadow:
+          '6px 0 22px rgba(0,0,0,0.12)',
 
         overflowY: 'auto',
 
         userSelect: 'none',
       }}
     >
+      {/* BRAND ACCENT */}
+
       <div
         style={{
           width: 42,
@@ -196,9 +254,11 @@ export default function Toolbar() {
             'linear-gradient(90deg, transparent, #39ff14, transparent)',
 
           boxShadow:
-            '0 0 12px rgba(57, 255, 20, 0.45)',
+            '0 0 14px rgba(57,255,20,0.55)',
         }}
       />
+
+      {/* DESIGN TOOLS */}
 
       {tools.map((item) => {
         const Icon =
@@ -226,50 +286,34 @@ export default function Toolbar() {
 
             onMouseEnter={(
               event,
-            ) => {
-              if (active) {
-                return
-              }
-
-              event.currentTarget.style.background =
-                '#242a33'
-
-              event.currentTarget.style.borderColor =
-                '#46505f'
-
-              event.currentTarget.style.transform =
-                'translateY(-1px)'
-            }}
+            ) =>
+              handleMouseEnter(
+                event,
+                active,
+              )
+            }
 
             onMouseLeave={(
               event,
-            ) => {
-              if (active) {
-                return
-              }
-
-              event.currentTarget.style.background =
-                'transparent'
-
-              event.currentTarget.style.borderColor =
-                'transparent'
-
-              event.currentTarget.style.transform =
-                'translateY(0)'
-            }}
+            ) =>
+              handleMouseLeave(
+                event,
+                active,
+              )
+            }
 
             style={{
               ...dockButtonStyle,
 
               background:
                 active
-                  ? 'linear-gradient(180deg, #39ff14, #22d80b)'
+                  ? 'linear-gradient(180deg, #39ff14 0%, #24dc0d 100%)'
                   : 'transparent',
 
               color:
                 active
                   ? '#071007'
-                  : '#b7bec8',
+                  : '#aeb7c2',
 
               border:
                 active
@@ -278,10 +322,78 @@ export default function Toolbar() {
 
               boxShadow:
                 active
-                  ? '0 0 18px rgba(57, 255, 20, 0.28)'
+                  ? '0 0 20px rgba(57,255,20,0.34), inset 0 0 0 1px rgba(255,255,255,0.06)'
                   : 'none',
             }}
           >
+            {active && (
+              <div
+                style={{
+                  position:
+                    'absolute',
+
+                  left: -8,
+                  top: '50%',
+
+                  width: 3,
+                  height: 28,
+
+                  transform:
+                    'translateY(-50%)',
+
+                  borderRadius:
+                    '0 3px 3px 0',
+
+                  background:
+                    '#39ff14',
+
+                  boxShadow:
+                    '0 0 12px rgba(57,255,20,.8)',
+                }}
+              />
+            )}
+
+            <div
+              style={{
+                position:
+                  'absolute',
+
+                top: 5,
+                right: 6,
+
+                minWidth: 14,
+                height: 14,
+
+                display: 'grid',
+                placeItems: 'center',
+
+                padding:
+                  '0 3px',
+
+                borderRadius: 4,
+
+                background:
+                  active
+                    ? 'rgba(7,16,7,.16)'
+                    : '#0c0f13',
+
+                border:
+                  active
+                    ? '1px solid rgba(7,16,7,.2)'
+                    : '1px solid #29303a',
+
+                color:
+                  active
+                    ? '#071007'
+                    : '#606b78',
+
+                fontSize: 7,
+                fontWeight: 900,
+              }}
+            >
+              {item.shortcut}
+            </div>
+
             <Icon
               size={22}
               strokeWidth={2}
@@ -293,31 +405,22 @@ export default function Toolbar() {
 
                 fontWeight:
                   active
-                    ? 800
-                    : 600,
+                    ? 900
+                    : 700,
 
                 lineHeight: 1,
+
+                letterSpacing:
+                  0.1,
               }}
             >
               {item.label}
             </span>
-
-            <span
-              style={{
-                position:
-                  'absolute',
-
-                pointerEvents:
-                  'none',
-
-                opacity: 0,
-              }}
-            >
-              {item.shortcut}
-            </span>
           </button>
         )
       })}
+
+      {/* DIVIDER */}
 
       <div
         style={{
@@ -325,12 +428,14 @@ export default function Toolbar() {
           height: 1,
 
           margin:
-            '6px 0',
+            '7px 0 4px',
 
           background:
-            '#2e3440',
+            'linear-gradient(90deg, transparent, #343b47, transparent)',
         }}
       />
+
+      {/* SHORTCUT GUIDE */}
 
       <div
         style={{
@@ -342,36 +447,40 @@ export default function Toolbar() {
           borderRadius: 7,
 
           background:
-            '#1b1f26',
+            '#11151a',
 
           border:
-            '1px solid #2e3440',
+            '1px solid #29303a',
 
           color:
-            '#7c8591',
+            '#66717e',
 
-          fontSize: 9,
+          fontSize: 8,
 
-          lineHeight: 1.5,
+          lineHeight: 1.65,
 
           textAlign:
             'center',
         }}
       >
         <div>
-          V Select
+          V SELECT
         </div>
 
         <div>
-          W Wall
+          W WALL
         </div>
 
         <div>
-          C Camera
+          D DOOR
         </div>
 
         <div>
-          H Hub
+          C CAMERA
+        </div>
+
+        <div>
+          H HUB
         </div>
       </div>
 
@@ -381,9 +490,11 @@ export default function Toolbar() {
         }}
       />
 
+      {/* CURRENT MODE */}
+
       <div
         style={{
-          width: 48,
+          width: 54,
 
           padding:
             '7px 3px',
@@ -391,26 +502,63 @@ export default function Toolbar() {
           borderRadius: 7,
 
           background:
-            '#101216',
+            '#0d1115',
 
           border:
-            '1px solid #272d37',
-
-          color:
-            '#39ff14',
-
-          fontSize: 9,
-
-          fontWeight: 700,
+            '1px solid #29313b',
 
           textAlign:
             'center',
-
-          textTransform:
-            'uppercase',
         }}
       >
-        {tool}
+        <div
+          style={{
+            marginBottom: 3,
+
+            color:
+              '#596471',
+
+            fontSize: 6,
+
+            fontWeight: 900,
+
+            letterSpacing:
+              0.8,
+
+            textTransform:
+              'uppercase',
+          }}
+        >
+          Active
+        </div>
+
+        <div
+          style={{
+            overflow:
+              'hidden',
+
+            color:
+              '#39ff14',
+
+            fontSize: 8,
+
+            fontWeight: 900,
+
+            textOverflow:
+              'ellipsis',
+
+            textTransform:
+              'uppercase',
+
+            whiteSpace:
+              'nowrap',
+          }}
+        >
+          {tool ===
+          'equipmentHub'
+            ? 'HUB'
+            : tool}
+        </div>
       </div>
     </aside>
   )

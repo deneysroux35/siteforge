@@ -37,19 +37,20 @@ interface RibbonButtonProps {
 }
 
 const ribbonButtonBase: CSSProperties = {
-  minWidth: 66,
-  height: 54,
+  minWidth: 68,
+  height: 56,
+  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 4,
+  gap: 5,
   padding: '5px 10px',
-  borderRadius: 7,
+  borderRadius: 8,
   border: '1px solid transparent',
   fontFamily: 'Segoe UI, sans-serif',
   fontSize: 11,
-  fontWeight: 600,
+  fontWeight: 700,
   cursor: 'pointer',
   transition:
     'background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease',
@@ -70,8 +71,9 @@ function RibbonButton({
       return
     }
 
-    event.currentTarget.style.background = '#272d37'
-    event.currentTarget.style.borderColor = '#46505f'
+    event.currentTarget.style.background = '#222832'
+    event.currentTarget.style.borderColor = '#424c59'
+    event.currentTarget.style.color = '#ffffff'
     event.currentTarget.style.transform = 'translateY(-1px)'
   }
 
@@ -84,6 +86,7 @@ function RibbonButton({
 
     event.currentTarget.style.background = 'transparent'
     event.currentTarget.style.borderColor = 'transparent'
+    event.currentTarget.style.color = '#b7bec8'
     event.currentTarget.style.transform = 'translateY(0)'
   }
 
@@ -103,7 +106,7 @@ function RibbonButton({
         ...ribbonButtonBase,
 
         background: active
-          ? 'linear-gradient(180deg, #39ff14, #23d80c)'
+          ? 'linear-gradient(180deg, #39ff14 0%, #22d80b 100%)'
           : 'transparent',
 
         color: disabled
@@ -117,7 +120,7 @@ function RibbonButton({
           : 'transparent',
 
         boxShadow: active
-          ? '0 0 18px rgba(57,255,20,.25)'
+          ? '0 0 20px rgba(57,255,20,.30), inset 0 0 0 1px rgba(255,255,255,.05)'
           : 'none',
 
         cursor: disabled
@@ -133,6 +136,36 @@ function RibbonButton({
         size={20}
         strokeWidth={2}
       />
+
+      {shortcut && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 4,
+            right: 5,
+            maxWidth: 34,
+            overflow: 'hidden',
+            padding: '1px 3px',
+            borderRadius: 4,
+            background: active
+              ? 'rgba(7,16,7,.14)'
+              : '#0f1318',
+            border: active
+              ? '1px solid rgba(7,16,7,.16)'
+              : '1px solid #2c333d',
+            color: active
+              ? '#071007'
+              : '#697481',
+            fontSize: 6,
+            fontWeight: 900,
+            lineHeight: 1.2,
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {shortcut}
+        </span>
+      )}
 
       <span
         style={{
@@ -176,7 +209,7 @@ function RibbonGroup({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '5px 4px 3px',
+        padding: '5px 5px 3px',
       }}
     >
       <div
@@ -193,10 +226,10 @@ function RibbonGroup({
       <div
         style={{
           height: 14,
-          color: '#68717d',
-          fontSize: 9,
-          fontWeight: 700,
-          letterSpacing: 0.7,
+          color: '#74808e',
+          fontSize: 8,
+          fontWeight: 900,
+          letterSpacing: 1.05,
           textAlign: 'center',
           textTransform: 'uppercase',
         }}
@@ -300,8 +333,8 @@ export default function TopBar(): JSX.Element {
     <header
       style={{
         flexShrink: 0,
-        background: '#171a21',
-        borderBottom: '1px solid #343b47',
+        background: '#15191f',
+        borderBottom: '1px solid #303744',
         color: '#ffffff',
         fontFamily: 'Segoe UI, sans-serif',
         userSelect: 'none',
@@ -309,13 +342,13 @@ export default function TopBar(): JSX.Element {
     >
       <div
         style={{
-          height: 42,
+          height: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 15px',
-          background: '#111419',
-          borderBottom: '1px solid #282e38',
+          background: 'linear-gradient(180deg, #101419 0%, #0e1217 100%)',
+          borderBottom: '1px solid #282f39',
         }}
       >
         <div
@@ -327,11 +360,11 @@ export default function TopBar(): JSX.Element {
         >
           <div
             style={{
-              width: 28,
-              height: 28,
+              width: 30,
+              height: 30,
               display: 'grid',
               placeItems: 'center',
-              borderRadius: 7,
+              borderRadius: 8,
               background:
                 'linear-gradient(135deg, #39ff14, #11a500)',
               color: '#071007',
@@ -381,12 +414,21 @@ export default function TopBar(): JSX.Element {
           <div
             style={{
               display: 'flex',
-              gap: 14,
+              alignItems: 'center',
+              gap: 7,
               color: '#8c96a3',
-              fontSize: 11,
+              fontSize: 10,
+              fontWeight: 700,
             }}
           >
-            <span>
+            <span
+              style={{
+                padding: '5px 8px',
+                border: '1px solid #2d3540',
+                borderRadius: 6,
+                background: '#141920',
+              }}
+            >
               Walls{' '}
               <strong
                 style={{
@@ -397,7 +439,14 @@ export default function TopBar(): JSX.Element {
               </strong>
             </span>
 
-            <span>
+            <span
+              style={{
+                padding: '5px 8px',
+                border: '1px solid #2d3540',
+                borderRadius: 6,
+                background: '#141920',
+              }}
+            >
               Cameras{' '}
               <strong
                 style={{
@@ -412,9 +461,13 @@ export default function TopBar(): JSX.Element {
           <div
             style={{
               padding: '6px 10px',
-              border: '1px solid #343b47',
-              borderRadius: 6,
-              background: '#1b1f26',
+              border: isDirty
+                ? '1px solid #8b7628'
+                : '1px solid #343b47',
+              borderRadius: 7,
+              background: isDirty
+                ? '#211f14'
+                : '#171c22',
               color: '#b7bec8',
               fontSize: 11,
             }}
@@ -435,14 +488,16 @@ export default function TopBar(): JSX.Element {
 
       <div
         style={{
-          height: 82,
+          height: 86,
           display: 'flex',
           alignItems: 'stretch',
           overflowX: 'auto',
           overflowY: 'hidden',
-          padding: '0 8px',
+          padding: '0 9px',
           background:
-            'linear-gradient(180deg, #1b1f26, #171a21)',
+            'linear-gradient(180deg, #1a1f26 0%, #14181e 100%)',
+          boxShadow:
+            'inset 0 -1px 0 rgba(255,255,255,.025)',
         }}
       >
         <RibbonGroup title="Project">

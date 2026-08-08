@@ -60,25 +60,30 @@ function clamp(
 const labelStyle: CSSProperties = {
   display: 'block',
   marginBottom: 6,
-  color: '#a7a7a7',
-  fontSize: 11,
-  fontWeight: 700,
+  color: '#8f9aa7',
+  fontSize: 10,
+  fontWeight: 800,
+  letterSpacing: 0.25,
+  textTransform: 'uppercase',
 }
 
 const inputStyle: CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
   padding: '9px 10px',
-  background: '#20242b',
+  background: '#11151b',
   color: '#ffffff',
-  border: '1px solid #3a414d',
-  borderRadius: 6,
+  border: '1px solid #343b47',
+  borderRadius: 7,
   outline: 'none',
   fontSize: 12,
+  fontWeight: 600,
+  transition:
+    'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
 }
 
 const fieldStyle: CSSProperties = {
-  marginBottom: 14,
+  marginBottom: 12,
 }
 
 const placeholderStyle: CSSProperties = {
@@ -93,22 +98,24 @@ const placeholderStyle: CSSProperties = {
 
 const infoBoxStyle: CSSProperties = {
   padding: '9px 10px',
-  background: '#111419',
+  background: '#101318',
   border: '1px solid #292f38',
-  borderRadius: 6,
-  color: '#c1c7d0',
+  borderRadius: 7,
+  color: '#d5dbe3',
   fontSize: 11,
+  fontWeight: 700,
 }
 
 const deleteButtonStyle: CSSProperties = {
   width: '100%',
   padding: '10px 12px',
-  background: '#3a1919',
+  background: '#281416',
   color: '#ff8a8a',
-  border: '1px solid #6b2929',
-  borderRadius: 6,
+  border: '1px solid #5d282d',
+  borderRadius: 7,
   cursor: 'pointer',
-  fontWeight: 800,
+  fontWeight: 900,
+  letterSpacing: 0.2,
 }
 
 export default function Properties(): JSX.Element {
@@ -302,18 +309,39 @@ export default function Properties(): JSX.Element {
       selectedEquipmentHub,
     )
 
+  const selectionType =
+    selectedCamera
+      ? 'CAMERA'
+      : selectedEquipmentHub
+        ? 'EQUIPMENT HUB'
+        : selectedWall
+          ? 'WALL'
+          : 'NO SELECTION'
+
+  const selectionAccent =
+    selectedCamera
+      ? '#39ff14'
+      : selectedEquipmentHub
+        ? '#4fc3f7'
+        : selectedWall
+          ? '#ffd54f'
+          : '#68717d'
+
   return (
     <>
       <aside
         style={{
-          width: 320,
+          width: 336,
           flexShrink: 0,
-          background: '#13161c',
+          background:
+            'linear-gradient(180deg, #12161b 0%, #0f1217 100%)',
           borderLeft:
-            '1px solid #343b47',
+            '1px solid #303744',
           color: '#dddddd',
           overflowY: 'auto',
           overflowX: 'hidden',
+          boxShadow:
+            '-10px 0 30px rgba(0, 0, 0, 0.18)',
         }}
       >
         {/* HEADER */}
@@ -324,35 +352,85 @@ export default function Properties(): JSX.Element {
             top: 0,
             zIndex: 5,
             padding:
-              '15px 16px 13px',
+              '14px 15px 13px',
             background:
-              'rgba(19, 22, 28, 0.97)',
+              'rgba(15, 18, 23, 0.97)',
             borderBottom:
               '1px solid #2d333d',
             backdropFilter:
-              'blur(10px)',
+              'blur(12px)',
+            boxShadow:
+              '0 8px 24px rgba(0, 0, 0, 0.18)',
           }}
         >
           <div
             style={{
-              color: '#68717d',
-              fontSize: 9,
-              fontWeight: 900,
-              letterSpacing: 1.3,
-              textTransform:
-                'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent:
+                'space-between',
+              gap: 10,
             }}
           >
-           SentryCAD Inspector
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#39ff14',
+                  boxShadow:
+                    '0 0 10px rgba(57,255,20,.75)',
+                }}
+              />
+
+              <div
+                style={{
+                  color: '#8b95a2',
+                  fontSize: 9,
+                  fontWeight: 900,
+                  letterSpacing: 1.35,
+                  textTransform:
+                    'uppercase',
+                }}
+              >
+                SentryCAD Inspector
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: '3px 6px',
+                border:
+                  `1px solid ${selectionAccent}44`,
+                borderRadius: 5,
+                background:
+                  `${selectionAccent}12`,
+                color:
+                  selectionAccent,
+                fontSize: 7,
+                fontWeight: 900,
+                letterSpacing: 0.7,
+              }}
+            >
+              {selectionType}
+            </div>
           </div>
 
           <div
             style={{
-              marginTop: 5,
+              marginTop: 7,
               overflow: 'hidden',
               color: '#ffffff',
-              fontSize: 15,
-              fontWeight: 800,
+              fontSize: 16,
+              fontWeight: 900,
+              letterSpacing: -0.15,
               textOverflow:
                 'ellipsis',
               whiteSpace: 'nowrap',
@@ -360,11 +438,37 @@ export default function Properties(): JSX.Element {
           >
             {selectionTitle}
           </div>
+
+          <div
+            style={{
+              marginTop: 7,
+              height: 2,
+              overflow: 'hidden',
+              borderRadius: 4,
+              background: '#232932',
+            }}
+          >
+            <div
+              style={{
+                width: hasSelectedObject
+                  ? '100%'
+                  : '22%',
+                height: '100%',
+                borderRadius: 4,
+                background:
+                  selectionAccent,
+                boxShadow:
+                  `0 0 9px ${selectionAccent}66`,
+                transition:
+                  'width 180ms ease, background 180ms ease',
+              }}
+            />
+          </div>
         </div>
 
         <div
           style={{
-            padding: 12,
+            padding: '12px 11px 18px',
           }}
         >
           {/* SELECTED OBJECT */}

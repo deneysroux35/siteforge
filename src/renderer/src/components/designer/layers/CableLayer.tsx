@@ -90,6 +90,36 @@ export default function CableLayer(): JSX.Element {
                 ? 'WARNING'
                 : 'CAT6'
 
+          const cameraName =
+            camera.name?.trim() ||
+            'Camera'
+
+          const hubName =
+            hub.name?.trim() ||
+            'Equipment Hub'
+
+          const routeLabel =
+            `${cameraName} → ${hubName}`
+
+          const distanceLabel =
+            `${metres.toFixed(1)} m · ${cableStatus}`
+
+          const labelWidth =
+            Math.max(
+              120,
+              Math.min(
+                220,
+                routeLabel.length * 6.5,
+              ),
+            )
+
+          const labelX =
+            midpointX -
+            labelWidth / 2
+
+          const labelY =
+            midpointY - 20
+
           return (
             <Group
               key={camera.id}
@@ -111,52 +141,73 @@ export default function CableLayer(): JSX.Element {
               />
 
               <Rect
-                x={
-                  midpointX - 40
-                }
-                y={
-                  midpointY - 13
-                }
-                width={80}
-                height={26}
+                x={labelX}
+                y={labelY}
+                width={labelWidth}
+                height={40}
                 fill="#101318"
                 stroke={cableColor}
                 strokeWidth={1}
-                cornerRadius={6}
+                cornerRadius={7}
+                shadowColor="#000000"
+                shadowBlur={8}
+                shadowOpacity={0.35}
                 listening={false}
               />
 
               <Text
-                x={
-                  midpointX - 38
+                x={labelX + 6}
+                y={labelY + 6}
+                width={
+                  labelWidth - 12
                 }
-                y={
-                  midpointY - 9
-                }
-                width={76}
-                text={`${metres.toFixed(
-                  1,
-                )} m`}
+                text={routeLabel}
                 align="center"
                 fill="#ffffff"
-                fontSize={10}
+                fontSize={9}
                 fontStyle="bold"
                 listening={false}
               />
 
               <Text
-                x={
-                  midpointX - 38
+                x={labelX + 6}
+                y={labelY + 22}
+                width={
+                  labelWidth - 12
                 }
-                y={
-                  midpointY + 3
-                }
-                width={76}
-                text={cableStatus}
+                text={distanceLabel}
                 align="center"
                 fill={cableColor}
-                fontSize={7}
+                fontSize={8}
                 fontStyle="bold"
+                listening={false}
+              />
+
+              <Rect
+                x={
+                  camera.position.x - 3
+                }
+                y={
+                  camera.position.y - 3
+                }
+                width={6}
+                height={6}
+                fill={cableColor}
+                cornerRadius={3}
+                listening={false}
+              />
+
+              <Rect
+                x={
+                  hub.position.x - 3
+                }
+                y={
+                  hub.position.y - 3
+                }
+                width={6}
+                height={6}
+                fill={cableColor}
+                cornerRadius={3}
                 listening={false}
               />
             </Group>
