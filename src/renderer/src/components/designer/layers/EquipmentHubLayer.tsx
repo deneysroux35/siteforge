@@ -4,6 +4,7 @@ import type {
 
 import {
   Group,
+  Line,
   Rect,
   Text,
 } from 'react-konva'
@@ -16,7 +17,12 @@ import {
   useDesignerStore,
 } from '../../../store/designerStore'
 
+import {
+  analyseHubPoe,
+} from '../../../services/poeEngine'
+
 const GRID_SIZE = 25
+const PIXELS_PER_METRE = 25
 
 function snapToGrid(
   value: number,
@@ -33,6 +39,12 @@ export default function EquipmentHubLayer(): JSX.Element {
     useDesignerStore(
       (state) =>
         state.equipmentHubs,
+    )
+
+  const cameras =
+    useDesignerStore(
+      (state) =>
+        state.cameras,
     )
 
   const selectEquipmentHub =
@@ -62,223 +74,682 @@ export default function EquipmentHubLayer(): JSX.Element {
   return (
     <>
       {equipmentHubs.map(
-        (hub) => (
-          <Group
-            key={hub.id}
-
-            x={hub.position.x}
-            y={hub.position.y}
-
-            draggable
-
-            onMouseDown={(
-              event,
-            ): void => {
-              event.cancelBubble =
-                true
-
-              selectEquipmentHub(
+        (hub) => {
+          const assignedCameras =
+            cameras.filter(
+              (camera) =>
+                camera.assignedHubId ===
                 hub.id,
-              )
-            }}
+            )
 
-            onDragStart={(
-              event,
-            ): void => {
-              event.cancelBubble =
-                true
+          const cameraCount =
+            assignedCameras.length
 
-              selectEquipmentHub(
-                hub.id,
-              )
+          const cableRuns =
+            assignedCameras.map(
+              (camera) => {
+                const deltaX =
+                  hub.position.x -
+                  camera.position.x
 
-              beginEquipmentHubEdit()
-            }}
+                const deltaY =
+                  hub.position.y -
+                  camera.position.y
 
-            onDragMove={(
-              event:
-                KonvaEventObject<DragEvent>,
-            ): void => {
-              event.cancelBubble =
-                true
+                const pixelDistance =
+                  Math.sqrt(
+                    deltaX ** 2 +
+                      deltaY ** 2,
+                  )
 
-              const node =
-                event.target
+                return (
+                  pixelDistance /
+                  PIXELS_PER_METRE
+                )
+              },
+            )
 
-              const x =
-                snapToGrid(
-                  node.x(),
+          const totalCableMetres =
+            cableRuns.reduce(
+              (
+                total,
+                metres,
+              ) =>
+                total +
+                metres,
+              0,
+            )
+
+          const longestCableMetres =
+            cableRuns.reduce(
+              (
+                longest,
+                metres,
+              ) =>
+                Math.max(
+                  longest,
+                  metres,
+                ),
+              0,
+            )
+
+          const poeAnalysis =
+            analyseHubPoe(
+              hub.id,
+              cameras,
+            )
+
+          const recommendedSwitch =
+            poeAnalysis.recommendedSwitch
+
+          const hasCableFailure =
+            longestCableMetres >
+            100
+
+          const hasCableWarning =
+            longestCableMetres >=
+            90
+
+          const rackStatus =
+            hasCableFailure
+              ? 'CABLE OVER LIMIT'
+              : hasCableWarning
+                ? 'CABLE WARNING'
+                : poeAnalysis.status
+
+          const statusColor =
+            rackStatus ===
+              'CABLE OVER LIMIT' ||
+            rackStatus ===
+              'NO SUITABLE SWITCH'
+              ? '#ff5d5d'
+              : rackStatus ===
+                    'CABLE WARNING' ||
+                  rackStatus ===
+                    'WARNING'
+                ? '#ffd54f'
+                : '#39ff14'
+
+          const cardVisible =
+            cameraCount > 0 ||
+            hub.selected
+
+          const switchName =
+            recommendedSwitch
+              ? recommendedSwitch.model
+              : cameraCount === 0
+                ? 'NO LOAD'
+                : 'NO SWITCH'
+
+          const portText =
+            recommendedSwitch
+              ? `${poeAnalysis.requiredPoePorts} / ${recommendedSwitch.poePorts}`
+              : `${poeAnalysis.requiredPoePorts}`
+
+          const poeText =
+            recommendedSwitch
+              ? `${poeAnalysis.totalPoeWatts.toFixed(
+                  1,
+                )} / ${recommendedSwitch.poeBudgetWatts} W`
+              : `${poeAnalysis.totalPoeWatts.toFixed(
+                  1,
+                )} W`
+
+          const headroomText =
+            recommendedSwitch
+              ? `${poeAnalysis.poeHeadroomWatts.toFixed(
+                  1,
+                )} W`
+              : '—'
+
+          return (
+            <Group
+              key={hub.id}
+              x={hub.position.x}
+              y={hub.position.y}
+              draggable
+
+              onMouseDown={(
+                event,
+              ): void => {
+                event.cancelBubble =
+                  true
+
+                selectEquipmentHub(
+                  hub.id,
+                )
+              }}
+
+              onDragStart={(
+                event,
+              ): void => {
+                event.cancelBubble =
+                  true
+
+                selectEquipmentHub(
+                  hub.id,
                 )
 
-              const y =
-                snapToGrid(
-                  node.y(),
-                )
+                beginEquipmentHubEdit()
+              }}
 
-              node.position({
-                x,
-                y,
-              })
+              onDragMove={(
+                event:
+                  KonvaEventObject<DragEvent>,
+              ): void => {
+                event.cancelBubble =
+                  true
 
-              updateEquipmentHubPosition(
-                hub.id,
-                {
+                const node =
+                  event.target
+
+                const x =
+                  snapToGrid(
+                    node.x(),
+                  )
+
+                const y =
+                  snapToGrid(
+                    node.y(),
+                  )
+
+                node.position({
                   x,
                   y,
-                },
-              )
-            }}
+                })
 
-            onDragEnd={(
-              event,
-            ): void => {
-              event.cancelBubble =
-                true
+                updateEquipmentHubPosition(
+                  hub.id,
+                  {
+                    x,
+                    y,
+                  },
+                )
+              }}
 
-              finishEquipmentHubEdit()
-            }}
-          >
-            <Rect
-              x={-28}
-              y={-22}
+              onDragEnd={(
+                event,
+              ): void => {
+                event.cancelBubble =
+                  true
 
-              width={56}
-              height={44}
+                finishEquipmentHubEdit()
+              }}
+            >
+              {/* RACK BODY */}
 
-              fill={
-                hub.selected
-                  ? '#1f3a1f'
-                  : '#171b21'
-              }
+              <Rect
+                x={-31}
+                y={-25}
+                width={62}
+                height={50}
 
-              stroke={
-                hub.selected
-                  ? '#39ff14'
-                  : '#59616d'
-              }
+                fill={
+                  hub.selected
+                    ? '#1a311c'
+                    : '#151a20'
+                }
 
-              strokeWidth={
-                hub.selected
-                  ? 3
-                  : 2
-              }
+                stroke={
+                  hub.selected
+                    ? statusColor
+                    : '#59616d'
+                }
 
-              cornerRadius={8}
+                strokeWidth={
+                  hub.selected
+                    ? 3
+                    : 2
+                }
 
-              shadowColor="#39ff14"
+                cornerRadius={9}
 
-              shadowBlur={
-                hub.selected
-                  ? 18
-                  : 8
-              }
+                shadowColor={
+                  statusColor
+                }
 
-              shadowOpacity={
-                hub.selected
-                  ? 0.55
-                  : 0.18
-              }
-            />
+                shadowBlur={
+                  hub.selected
+                    ? 20
+                    : 8
+                }
 
-            <Rect
-              x={-18}
-              y={-11}
+                shadowOpacity={
+                  hub.selected
+                    ? 0.55
+                    : 0.16
+                }
+              />
 
-              width={36}
-              height={22}
+              {/* INNER RACK */}
 
-              fill="#0d1014"
+              <Rect
+                x={-19}
+                y={-13}
+                width={38}
+                height={26}
 
-              stroke="#39ff14"
+                fill="#0c1014"
 
-              strokeWidth={1.5}
+                stroke={
+                  statusColor
+                }
 
-              cornerRadius={4}
-            />
+                strokeWidth={1.5}
 
-            <Rect
-              x={-13}
-              y={-6}
+                cornerRadius={4}
+              />
 
-              width={26}
-              height={3}
+              {/* RACK SLOTS */}
 
-              fill="#39ff14"
+              <Rect
+                x={-14}
+                y={-8}
+                width={28}
+                height={3}
 
-              cornerRadius={2}
-            />
+                fill={
+                  statusColor
+                }
 
-            <Rect
-              x={-13}
-              y={0}
+                cornerRadius={2}
+              />
 
-              width={26}
-              height={3}
+              <Rect
+                x={-14}
+                y={-2}
+                width={28}
+                height={3}
 
-              fill="#39ff14"
+                fill={
+                  statusColor
+                }
 
-              opacity={0.75}
+                opacity={0.72}
 
-              cornerRadius={2}
-            />
+                cornerRadius={2}
+              />
 
-            <Rect
-              x={-13}
-              y={6}
+              <Rect
+                x={-14}
+                y={4}
+                width={28}
+                height={3}
 
-              width={26}
-              height={3}
+                fill={
+                  statusColor
+                }
 
-              fill="#39ff14"
+                opacity={0.48}
 
-              opacity={0.5}
+                cornerRadius={2}
+              />
 
-              cornerRadius={2}
-            />
+              {/* CAMERA COUNT BADGE */}
 
-            <Text
-              x={-45}
-              y={28}
+              <Rect
+                x={17}
+                y={-31}
+                width={28}
+                height={16}
 
-              width={90}
+                fill="#101318"
 
-              text={hub.name}
+                stroke={
+                  statusColor
+                }
 
-              align="center"
+                strokeWidth={1}
 
-              fontSize={10}
+                cornerRadius={5}
+              />
 
-              fontStyle="bold"
+              <Text
+                x={18}
+                y={-27}
+                width={26}
 
-              fill={
-                hub.selected
-                  ? '#39ff14'
-                  : '#c5ccd6'
-              }
+                text={`${cameraCount} CAM`}
 
-              listening={false}
-            />
+                align="center"
 
-            <Text
-              x={-45}
-              y={40}
+                fontSize={7}
 
-              width={90}
+                fontStyle="bold"
 
-              text={
-                hub.type.toUpperCase()
-              }
+                fill={
+                  statusColor
+                }
 
-              align="center"
+                listening={false}
+              />
 
-              fontSize={7}
+              {/* RACK NAME */}
 
-              fill="#68717d"
+              <Text
+                x={-60}
+                y={31}
+                width={120}
 
-              listening={false}
-            />
-          </Group>
-        ),
+                text={hub.name}
+
+                align="center"
+
+                fontSize={10}
+
+                fontStyle="bold"
+
+                fill={
+                  hub.selected
+                    ? statusColor
+                    : '#d0d6de'
+                }
+
+                listening={false}
+              />
+
+              {/* RACK TYPE */}
+
+              <Text
+                x={-60}
+                y={44}
+                width={120}
+
+                text={
+                  hub.type.toUpperCase()
+                }
+
+                align="center"
+
+                fontSize={7}
+
+                fill="#68717d"
+
+                listening={false}
+              />
+
+              {/* RACK INTELLIGENCE CARD */}
+
+              {cardVisible && (
+                <Group
+                  x={48}
+                  y={-78}
+
+                  listening={false}
+                >
+                  {/* CONNECTOR */}
+
+                  <Line
+                    points={[
+                      -17,
+                      78,
+                      0,
+                      78,
+                    ]}
+
+                    stroke={
+                      statusColor
+                    }
+
+                    strokeWidth={1.5}
+
+                    dash={[
+                      4,
+                      4,
+                    ]}
+
+                    opacity={0.75}
+
+                    listening={false}
+                  />
+
+                  {/* CARD */}
+
+                  <Rect
+                    x={0}
+                    y={0}
+
+                    width={164}
+                    height={156}
+
+                    fill="#101419"
+
+                    stroke={
+                      statusColor
+                    }
+
+                    strokeWidth={1}
+
+                    cornerRadius={8}
+
+                    shadowColor="#000000"
+
+                    shadowBlur={12}
+
+                    shadowOpacity={0.4}
+
+                    listening={false}
+                  />
+
+                  {/* TITLE */}
+
+                  <Text
+                    x={10}
+                    y={9}
+                    width={144}
+
+                    text="RACK INTELLIGENCE"
+
+                    fill="#7f8995"
+
+                    fontSize={7}
+
+                    fontStyle="bold"
+
+                    listening={false}
+                  />
+
+                  {/* CAMERA COUNT */}
+
+                  <Text
+                    x={10}
+                    y={23}
+                    width={144}
+
+                    text={`${cameraCount} CAMERAS`}
+
+                    fill="#ffffff"
+
+                    fontSize={9}
+
+                    fontStyle="bold"
+
+                    listening={false}
+                  />
+
+                  {/* TOTAL CABLE */}
+
+                  <Text
+                    x={10}
+                    y={38}
+                    width={144}
+
+                    text={`${totalCableMetres.toFixed(
+                      1,
+                    )} m TOTAL CABLE`}
+
+                    fill="#4fc3f7"
+
+                    fontSize={8}
+
+                    fontStyle="bold"
+
+                    listening={false}
+                  />
+
+                  {/* LONGEST RUN */}
+
+                  <Text
+                    x={10}
+                    y={51}
+                    width={144}
+
+                    text={`MAX RUN ${longestCableMetres.toFixed(
+                      1,
+                    )} m`}
+
+                    fill="#9ba5b1"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* SWITCH */}
+
+                  <Text
+                    x={10}
+                    y={67}
+                    width={144}
+
+                    text={`SWITCH  ${switchName}`}
+
+                    fill={
+                      recommendedSwitch
+                        ? '#ffffff'
+                        : cameraCount === 0
+                          ? '#7f8995'
+                          : '#ff5d5d'
+                    }
+
+                    fontSize={8}
+
+                    fontStyle="bold"
+
+                    listening={false}
+                  />
+
+                  {/* PORTS */}
+
+                  <Text
+                    x={10}
+                    y={82}
+                    width={144}
+
+                    text={`PORTS   ${portText}`}
+
+                    fill="#c5ccd6"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* POE LOAD */}
+
+                  <Text
+                    x={10}
+                    y={94}
+                    width={144}
+
+                    text={`PoE     ${poeText}`}
+
+                    fill="#c5ccd6"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* POE HEADROOM */}
+
+                  <Text
+                    x={10}
+                    y={106}
+                    width={144}
+
+                    text={`HEADROOM ${headroomText}`}
+
+                    fill="#c5ccd6"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* UTILISATION */}
+
+                  <Text
+                    x={10}
+                    y={118}
+                    width={144}
+
+                    text={
+                      recommendedSwitch
+                        ? `UTIL    PORT ${poeAnalysis.portUtilisationPercentage.toFixed(
+                            0,
+                          )}% · PoE ${poeAnalysis.poeUtilisationPercentage.toFixed(
+                            0,
+                          )}%`
+                        : 'UTIL    —'
+                    }
+
+                    fill="#9ba5b1"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* STATUS BAR */}
+
+                  <Rect
+                    x={9}
+                    y={136}
+                    width={146}
+                    height={12}
+
+                    fill={
+                      `${statusColor}22`
+                    }
+
+                    stroke={
+                      `${statusColor}88`
+                    }
+
+                    strokeWidth={1}
+
+                    cornerRadius={5}
+
+                    listening={false}
+                  />
+
+                  <Text
+                    x={10}
+                    y={139}
+                    width={144}
+
+                    text={
+                      rackStatus
+                    }
+
+                    align="center"
+
+                    fill={
+                      statusColor
+                    }
+
+                    fontSize={7}
+
+                    fontStyle="bold"
+
+                    listening={false}
+                  />
+                </Group>
+              )}
+            </Group>
+          )
+        },
       )}
     </>
   )
