@@ -1438,6 +1438,36 @@ export const useDesignerStore =
                 return state
               }
 
+              const remainingEquipmentHubs =
+                state.equipmentHubs.filter(
+                  (hub) =>
+                    !hub.selected,
+                )
+
+              let rackNumber = 1
+
+              const renumberedEquipmentHubs =
+                remainingEquipmentHubs.map(
+                  (hub) => {
+                    if (
+                      hub.type !== 'rack'
+                    ) {
+                      return hub
+                    }
+
+                    const renamedHub = {
+                      ...hub,
+
+                      name:
+                        `Main Rack ${rackNumber}`,
+                    }
+
+                    rackNumber += 1
+
+                    return renamedHub
+                  },
+                )
+
               return {
                 past: [
                   ...state.past,
@@ -1462,10 +1492,7 @@ export const useDesignerStore =
                   ),
 
                 equipmentHubs:
-                  state.equipmentHubs.filter(
-                    (hub) =>
-                      !hub.selected,
-                  ),
+                  renumberedEquipmentHubs,
 
                 future: [],
               }
@@ -1698,4 +1725,5 @@ export const useDesignerStore =
         ),
     }),
   )
+  
   

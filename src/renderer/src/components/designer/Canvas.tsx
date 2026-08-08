@@ -165,6 +165,12 @@ export default function Canvas() {
         state.addEquipmentHub,
     )
 
+  const equipmentHubs =
+    useDesignerStore(
+      (state) =>
+        state.equipmentHubs,
+    )
+
   const clearSelection =
     useDesignerStore(
       (state) =>
@@ -505,6 +511,45 @@ export default function Canvas() {
     )
   }
 
+  function getNextRackName(): string {
+    const usedNumbers = new Set(
+      equipmentHubs
+        .map((hub) => {
+          const match =
+            hub.name.match(
+              /^Main Rack (\d+)$/,
+            )
+
+          if (!match) {
+            return null
+          }
+
+          return Number(
+            match[1],
+          )
+        })
+        .filter(
+          (number): number is number =>
+            number !== null,
+        ),
+    )
+
+    let nextNumber = 1
+
+    while (
+      usedNumbers.has(
+        nextNumber,
+      )
+    ) {
+      nextNumber += 1
+    }
+
+    return (
+      'Main Rack ' +
+      nextNumber
+    )
+  }
+
   function handleMouseDown(
     event:
       KonvaEventObject<
@@ -631,7 +676,7 @@ export default function Canvas() {
           uuidv4(),
 
         name:
-          'Main Rack',
+          getNextRackName(),
 
         position:
           worldPoint,

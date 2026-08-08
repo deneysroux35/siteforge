@@ -624,7 +624,7 @@ export default function SmartEquipmentPanel(): JSX.Element {
         />
 
         Smart sizing is based on the current
-        SiteForge equipment catalog.
+        SentryCAD equipment catalog.
       </div>
     </div>
   )

@@ -8,12 +8,12 @@ import {
   FileText,
   BarChart3,
   Settings,
-} from "lucide-react";
+} from "lucide-react"
 
 import {
   useWorkspaceStore,
   type SiteForgeWorkspace,
-} from "../../store/workspaceStore";
+} from "../../store/workspaceStore"
 
 const menu = [
   {
@@ -62,19 +62,19 @@ const menu = [
     workspace: "settings",
   },
 ] satisfies {
-  icon: any;
-  text: string;
-  workspace: SiteForgeWorkspace;
-}[];
+  icon: any
+  text: string
+  workspace: SiteForgeWorkspace
+}[]
 
 export default function Sidebar() {
   const activeWorkspace = useWorkspaceStore(
     (state) => state.activeWorkspace,
-  );
+  )
 
   const setWorkspace = useWorkspaceStore(
     (state) => state.setWorkspace,
-  );
+  )
 
   return (
     <aside
@@ -89,25 +89,82 @@ export default function Sidebar() {
     >
       <div
         style={{
-          padding: 24,
-          fontSize: 28,
-          fontWeight: 700,
-          color: "#39ff14",
+          padding: "22px 20px 18px",
+          borderBottom: "1px solid #242424",
         }}
       >
-        SITEFORGE
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 8,
+              background:
+                "linear-gradient(135deg, #39ff14, #11a500)",
+              color: "#071007",
+              fontSize: 15,
+              fontWeight: 900,
+              boxShadow:
+                "0 0 18px rgba(57,255,20,0.18)",
+            }}
+          >
+            SC
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 800,
+                letterSpacing: 0.5,
+                color: "#ffffff",
+              }}
+            >
+              SENTRY
+              <span
+                style={{
+                  color: "#39ff14",
+                }}
+              >
+                CAD
+              </span>
+            </div>
+
+            <div
+              style={{
+                marginTop: 2,
+                fontSize: 8,
+                fontWeight: 700,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                color: "#68717d",
+              }}
+            >
+              Design. Engineer. Protect.
+            </div>
+          </div>
+        </div>
       </div>
 
       <div style={{ padding: 10 }}>
         {menu.map((item) => {
-          const Icon = item.icon;
+          const Icon = item.icon
 
           const active =
-            activeWorkspace === item.workspace;
+            activeWorkspace === item.workspace
 
           return (
             <button
               key={item.text}
+              type="button"
               onClick={() =>
                 setWorkspace(item.workspace)
               }
@@ -117,7 +174,9 @@ export default function Sidebar() {
                 alignItems: "center",
                 gap: 12,
                 padding: 12,
-                border: "none",
+                border: active
+                  ? "1px solid rgba(57,255,20,0.14)"
+                  : "1px solid transparent",
                 cursor: "pointer",
                 borderRadius: 8,
                 marginBottom: 4,
@@ -131,6 +190,10 @@ export default function Sidebar() {
                   ? "#39ff14"
                   : "#ddd",
 
+                boxShadow: active
+                  ? "0 0 18px rgba(57,255,20,0.06)"
+                  : "none",
+
                 transition: "0.15s",
               }}
             >
@@ -138,9 +201,9 @@ export default function Sidebar() {
 
               {item.text}
             </button>
-          );
+          )
         })}
       </div>
     </aside>
-  );
+  )
 }

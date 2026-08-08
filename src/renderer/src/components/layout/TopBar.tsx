@@ -263,12 +263,12 @@ export default function TopBar(): JSX.Element {
       saveCurrentProject(true)
     } catch (error) {
       console.error(
-        'Unable to save SiteForge project.',
+        'Unable to save SentryCAD project.',
         error,
       )
 
       window.alert(
-        'SiteForge could not save the project.',
+        'SentryCAD could not save the project.',
       )
     }
   }
@@ -278,12 +278,12 @@ export default function TopBar(): JSX.Element {
       openProjectPicker()
     } catch (error) {
       console.error(
-        'Unable to open SiteForge project.',
+        'Unable to open SentryCAD project.',
         error,
       )
 
       window.alert(
-        'SiteForge could not open the project.',
+        'SentryCAD could not open the project.',
       )
     }
   }
@@ -341,7 +341,7 @@ export default function TopBar(): JSX.Element {
                 '0 0 18px rgba(57,255,20,.22)',
             }}
           >
-            SF
+            SC
           </div>
 
           <div>
@@ -353,7 +353,7 @@ export default function TopBar(): JSX.Element {
                 letterSpacing: 0.5,
               }}
             >
-              SITEFORGE
+              SENTRYCAD
             </div>
 
             <div
@@ -366,7 +366,7 @@ export default function TopBar(): JSX.Element {
                 textTransform: 'uppercase',
               }}
             >
-              CCTV Design Workspace
+              Security Engineering Platform
             </div>
           </div>
         </div>

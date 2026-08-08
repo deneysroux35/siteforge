@@ -343,7 +343,7 @@ export default function Properties(): JSX.Element {
                 'uppercase',
             }}
           >
-            SiteForge Inspector
+           SentryCAD Inspector
           </div>
 
           <div
