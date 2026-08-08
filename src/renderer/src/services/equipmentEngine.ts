@@ -47,21 +47,19 @@ export interface SmartEquipmentRecommendation {
 
   warnings: string[]
 }
-
-function sortBySellPrice<
-  T extends {
-    sellPrice: number
-  },
->(
-  products: T[],
-): T[] {
-  return [...products].sort(
-    (first, second) =>
-      first.sellPrice -
-      second.sellPrice,
-  )
-}
-
+/*
+ * NVR SELECTION
+ *
+ * An NVR must now satisfy:
+ *
+ * 1. Camera channels
+ * 2. Camera resolution
+ * 3. Incoming bandwidth
+ * 4. Required storage capacity
+ *
+ * We then choose the smallest
+ * suitable recorder.
+ */
 function findRecommendedNvr(
   summary: ProjectSummary,
 ): NvrProduct | null {
@@ -72,9 +70,7 @@ function findRecommendedNvr(
   }
 
   const products =
-    sortBySellPrice(
-      getNvrProducts(),
-    )
+    getNvrProducts()
 
   const suitableProducts =
     products
@@ -83,10 +79,21 @@ function findRecommendedNvr(
           product.channels >=
             summary.cameraCount &&
           product.maxResolutionMP >=
-            summary.averageResolutionMP,
+            summary.averageResolutionMP &&
+          product.incomingBandwidthMbps >=
+            summary.recommendedNVRBandwidthMbps &&
+          product.maxStorageTB >=
+            summary.estimatedStorageTB,
       )
       .sort(
-        (first, second) => {
+        (
+          first,
+          second,
+        ) => {
+          /*
+           * Prefer the smallest
+           * channel count first.
+           */
           if (
             first.channels !==
             second.channels
@@ -94,6 +101,37 @@ function findRecommendedNvr(
             return (
               first.channels -
               second.channels
+            )
+          }
+
+          /*
+           * Then choose the recorder
+           * with the smallest suitable
+           * bandwidth capacity.
+           */
+          if (
+            first.incomingBandwidthMbps !==
+            second.incomingBandwidthMbps
+          ) {
+            return (
+              first.incomingBandwidthMbps -
+              second.incomingBandwidthMbps
+            )
+          }
+
+          /*
+           * Then prefer lower maximum
+           * storage capacity because it
+           * normally represents the
+           * smaller recorder.
+           */
+          if (
+            first.maxStorageTB !==
+            second.maxStorageTB
+          ) {
+            return (
+              first.maxStorageTB -
+              second.maxStorageTB
             )
           }
 
@@ -110,9 +148,25 @@ function findRecommendedNvr(
   )
 }
 
+/*
+ * POE SWITCH SELECTION
+ *
+ * If the NVR already provides
+ * enough integrated PoE ports,
+ * a separate PoE switch is not
+ * required.
+ *
+ * Otherwise choose a switch that
+ * supports both:
+ *
+ * - required ports
+ * - required PoE power budget
+ */
 function findRecommendedPoeSwitch(
   summary: ProjectSummary,
-  nvr: NvrProduct | null,
+  nvr:
+    | NvrProduct
+    | null,
 ): PoeSwitchProduct | null {
   if (
     summary.cameraCount === 0
@@ -120,17 +174,16 @@ function findRecommendedPoeSwitch(
     return null
   }
 
-  /*
-   * If the recommended NVR already
-   * provides enough integrated PoE
-   * ports, a separate PoE switch is
-   * not required.
-   */
+  const nvrHasIntegratedPoe =
+    Boolean(
+      nvr &&
+      nvr.poePorts > 0 &&
+      nvr.poePorts >=
+        summary.cameraCount,
+    )
+
   if (
-    nvr &&
-    nvr.poePorts >=
-      summary.cameraCount &&
-    nvr.poePorts > 0
+    nvrHasIntegratedPoe
   ) {
     return null
   }
@@ -145,7 +198,10 @@ function findRecommendedPoeSwitch(
             summary.recommendedPoEPowerBudget,
       )
       .sort(
-        (first, second) => {
+        (
+          first,
+          second,
+        ) => {
           if (
             first.poePorts !==
             second.poePorts
@@ -156,9 +212,19 @@ function findRecommendedPoeSwitch(
             )
           }
 
-          return (
-            first.poeBudgetWatts -
+          if (
+            first.poeBudgetWatts !==
             second.poeBudgetWatts
+          ) {
+            return (
+              first.poeBudgetWatts -
+              second.poeBudgetWatts
+            )
+          }
+
+          return (
+            first.sellPrice -
+            second.sellPrice
           )
         },
       )
@@ -169,6 +235,14 @@ function findRecommendedPoeSwitch(
   )
 }
 
+/*
+ * STORAGE SELECTION
+ *
+ * Evaluate every surveillance
+ * HDD and choose the lowest-cost
+ * combination that satisfies the
+ * estimated storage requirement.
+ */
 function findStorageRecommendation(
   requiredStorageTB: number,
 ): StorageRecommendation {
@@ -176,11 +250,20 @@ function findStorageRecommendation(
     requiredStorageTB <= 0
   ) {
     return {
-      requiredStorageTB: 0,
-      drive: null,
-      quantity: 0,
-      installedCapacityTB: 0,
-      spareCapacityTB: 0,
+      requiredStorageTB:
+        0,
+
+      drive:
+        null,
+
+      quantity:
+        0,
+
+      installedCapacityTB:
+        0,
+
+      spareCapacityTB:
+        0,
     }
   }
 
@@ -192,19 +275,21 @@ function findStorageRecommendation(
   ) {
     return {
       requiredStorageTB,
-      drive: null,
-      quantity: 0,
-      installedCapacityTB: 0,
-      spareCapacityTB: 0,
+
+      drive:
+        null,
+
+      quantity:
+        0,
+
+      installedCapacityTB:
+        0,
+
+      spareCapacityTB:
+        0,
     }
   }
 
-  /*
-   * Evaluate every HDD option and
-   * choose the combination with the
-   * lowest sell price that still
-   * meets the required capacity.
-   */
   const options =
     products.map(
       (drive) => {
@@ -224,15 +309,21 @@ function findStorageRecommendation(
 
         return {
           drive,
+
           quantity,
+
           installedCapacityTB,
+
           totalSellPrice,
         }
       },
     )
 
   options.sort(
-    (first, second) => {
+    (
+      first,
+      second,
+    ) => {
       if (
         first.totalSellPrice !==
         second.totalSellPrice
@@ -253,13 +344,23 @@ function findStorageRecommendation(
   const selected =
     options[0]
 
-  if (!selected) {
+  if (
+    !selected
+  ) {
     return {
       requiredStorageTB,
-      drive: null,
-      quantity: 0,
-      installedCapacityTB: 0,
-      spareCapacityTB: 0,
+
+      drive:
+        null,
+
+      quantity:
+        0,
+
+      installedCapacityTB:
+        0,
+
+      spareCapacityTB:
+        0,
     }
   }
 
@@ -280,13 +381,15 @@ function findStorageRecommendation(
         (
           selected.installedCapacityTB -
           requiredStorageTB
-        ).toFixed(2),
+        ).toFixed(
+          2,
+        ),
       ),
   }
 }
 
 function getUpsProducts():
-PowerProduct[] {
+  PowerProduct[] {
   return equipmentCatalog
     .filter(
       (
@@ -299,15 +402,33 @@ PowerProduct[] {
         product.active,
     )
     .sort(
-      (first, second) =>
+      (
+        first,
+        second,
+      ) =>
         first.capacityWatts -
         second.capacityWatts,
     )
 }
 
+/*
+ * UPS SIZING
+ *
+ * Camera power is included even
+ * when the cameras are PoE because
+ * that electrical load still needs
+ * to be supplied by the protected
+ * infrastructure.
+ */
 function findRecommendedUps(
   summary: ProjectSummary,
-  nvr: NvrProduct | null,
+  nvr:
+    | NvrProduct
+    | null,
+
+  poeSwitch:
+    | PoeSwitchProduct
+    | null,
 ): PowerProduct | null {
   if (
     summary.cameraCount === 0
@@ -316,22 +437,31 @@ function findRecommendedUps(
   }
 
   /*
-   * Approximate protected load.
+   * Add an allowance for the
+   * network switch itself.
    *
-   * Camera power is included even
-   * when supplied through PoE because
-   * the UPS ultimately has to support
-   * that electrical load.
+   * The catalogue currently stores
+   * PoE budget rather than actual
+   * switch operating consumption,
+   * so we use a modest infrastructure
+   * allowance here.
    */
+  const switchInfrastructureWatts =
+    poeSwitch
+      ? 25
+      : 0
+
   const estimatedLoadWatts =
     summary.totalCameraPower +
-    (nvr?.power ?? 0) +
-    25
+    (
+      nvr?.power ??
+      0
+    ) +
+    switchInfrastructureWatts +
+    15
 
   /*
-   * Add 30% headroom so the UPS is
-   * not selected at its absolute
-   * maximum rating.
+   * 30% UPS headroom.
    */
   const requiredUpsWatts =
     estimatedLoadWatts *
@@ -347,7 +477,8 @@ function findRecommendedUps(
         requiredUpsWatts,
     ) ??
     products[
-      products.length - 1
+      products.length -
+        1
     ] ??
     null
   )
@@ -370,10 +501,12 @@ function calculateInfrastructureCost(
     | null,
 ): number {
   const nvrCost =
-    nvr?.sellPrice ?? 0
+    nvr?.sellPrice ??
+    0
 
   const switchCost =
-    poeSwitch?.sellPrice ?? 0
+    poeSwitch?.sellPrice ??
+    0
 
   const storageCost =
     storage.drive
@@ -382,13 +515,18 @@ function calculateInfrastructureCost(
       : 0
 
   const upsCost =
-    ups?.sellPrice ?? 0
+    ups?.sellPrice ??
+    0
 
-  return (
-    nvrCost +
-    switchCost +
-    storageCost +
-    upsCost
+  return Number(
+    (
+      nvrCost +
+      switchCost +
+      storageCost +
+      upsCost
+    ).toFixed(
+      2,
+    ),
   )
 }
 
@@ -410,7 +548,8 @@ function buildWarnings(
     | PowerProduct
     | null,
 ): string[] {
-  const warnings: string[] = []
+  const warnings: string[] =
+    []
 
   if (
     summary.cameraCount === 0
@@ -418,6 +557,9 @@ function buildWarnings(
     return warnings
   }
 
+  /*
+   * CAMERA CATALOGUE
+   */
   if (
     summary.unassignedCameraCount >
     0
@@ -432,15 +574,101 @@ function buildWarnings(
     )
   }
 
-  if (!nvr) {
+  /*
+   * NVR
+   */
+  if (
+    !nvr
+  ) {
     warnings.push(
-      'No NVR in the current catalog can support this project.',
+      'No NVR in the current catalog satisfies the required channels, resolution, incoming bandwidth and storage capacity.',
     )
   }
 
+  if (
+    nvr
+  ) {
+    const channelUtilisation =
+      (
+        summary.cameraCount /
+        nvr.channels
+      ) *
+      100
+
+    if (
+      channelUtilisation >=
+      90
+    ) {
+      warnings.push(
+        `NVR channel utilisation is ${channelUtilisation.toFixed(
+          0,
+        )}%.`,
+      )
+    }
+
+    const bandwidthUtilisation =
+      nvr.incomingBandwidthMbps >
+      0
+        ? (
+            summary.estimatedBandwidthMbps /
+            nvr.incomingBandwidthMbps
+          ) *
+          100
+        : 0
+
+    if (
+      bandwidthUtilisation >=
+      80
+    ) {
+      warnings.push(
+        `NVR incoming bandwidth utilisation is ${bandwidthUtilisation.toFixed(
+          0,
+        )}%.`,
+      )
+    }
+
+    if (
+      summary.averageResolutionMP >
+      nvr.maxResolutionMP
+    ) {
+      warnings.push(
+        `Average camera resolution exceeds the ${nvr.model} supported resolution.`,
+      )
+    }
+
+    if (
+      storage.installedCapacityTB >
+      nvr.maxStorageTB
+    ) {
+      warnings.push(
+        `Recommended storage (${storage.installedCapacityTB} TB) exceeds the ${nvr.model} maximum storage capacity of ${nvr.maxStorageTB} TB.`,
+      )
+    }
+
+    /*
+     * Physical SATA bay check.
+     */
+    if (
+      storage.quantity >
+      nvr.sataBays
+    ) {
+      warnings.push(
+        `Storage requires ${storage.quantity} drives but ${nvr.model} has only ${nvr.sataBays} SATA bay${
+          nvr.sataBays === 1
+            ? ''
+            : 's'
+        }.`,
+      )
+    }
+  }
+
+  /*
+   * POE
+   */
   const nvrHasIntegratedPoe =
     Boolean(
       nvr &&
+      nvr.poePorts > 0 &&
       nvr.poePorts >=
         summary.cameraCount,
     )
@@ -454,6 +682,9 @@ function buildWarnings(
     )
   }
 
+  /*
+   * STORAGE
+   */
   if (
     summary.estimatedStorageTB >
       0 &&
@@ -464,19 +695,14 @@ function buildWarnings(
     )
   }
 
-  if (!ups) {
-    warnings.push(
-      'No suitable UPS product was found.',
-    )
-  }
-
+  /*
+   * UPS
+   */
   if (
-    nvr &&
-    storage.installedCapacityTB >
-      nvr.maxStorageTB
+    !ups
   ) {
     warnings.push(
-      `Recommended storage (${storage.installedCapacityTB} TB) exceeds the ${nvr.model} maximum storage capacity of ${nvr.maxStorageTB} TB.`,
+      'No suitable UPS product was found.',
     )
   }
 
@@ -486,6 +712,15 @@ function buildWarnings(
 export function calculateSmartEquipment(
   summary: ProjectSummary,
 ): SmartEquipmentRecommendation {
+  /*
+   * Storage requirement is known
+   * before final NVR selection.
+   */
+  const storage =
+    findStorageRecommendation(
+      summary.estimatedStorageTB,
+    )
+
   const nvr =
     findRecommendedNvr(
       summary,
@@ -497,15 +732,11 @@ export function calculateSmartEquipment(
       nvr,
     )
 
-  const storage =
-    findStorageRecommendation(
-      summary.estimatedStorageTB,
-    )
-
   const ups =
     findRecommendedUps(
       summary,
       nvr,
+      poeSwitch,
     )
 
   const infrastructureCost =
@@ -527,10 +758,15 @@ export function calculateSmartEquipment(
 
   return {
     nvr,
+
     poeSwitch,
+
     storage,
+
     ups,
+
     infrastructureCost,
+
     warnings,
   }
 }
