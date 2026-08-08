@@ -21,6 +21,14 @@ import {
   analyseHubPoe,
 } from '../../../services/poeEngine'
 
+import {
+  calculateProjectSummary,
+} from '../../../services/projectEngine'
+
+import {
+  calculateSmartEquipment,
+} from '../../../services/equipmentEngine'
+
 const GRID_SIZE = 25
 const PIXELS_PER_METRE = 25
 
@@ -142,6 +150,51 @@ export default function EquipmentHubLayer(): JSX.Element {
           const recommendedSwitch =
             poeAnalysis.recommendedSwitch
 
+          const projectSummary =
+            calculateProjectSummary({
+              walls: [],
+              cameras:
+                assignedCameras,
+            })
+
+          const smartEquipment =
+            calculateSmartEquipment(
+              projectSummary,
+            )
+
+          const recommendedNvr =
+            smartEquipment.nvr
+
+          const nvrName =
+            recommendedNvr
+              ? recommendedNvr.model
+              : cameraCount === 0
+                ? 'NO LOAD'
+                : 'NO NVR'
+
+          const nvrChannelText =
+            recommendedNvr
+              ? `${cameraCount} / ${recommendedNvr.channels}`
+              : `${cameraCount}`
+
+          const nvrBandwidthText =
+            recommendedNvr
+              ? `${projectSummary.estimatedBandwidthMbps.toFixed(
+                  1,
+                )} / ${recommendedNvr.incomingBandwidthMbps} Mbps`
+              : `${projectSummary.estimatedBandwidthMbps.toFixed(
+                  1,
+                )} Mbps`
+
+          const nvrStorageText =
+            recommendedNvr
+              ? `${projectSummary.estimatedStorageTB.toFixed(
+                  1,
+                )} / ${recommendedNvr.maxStorageTB} TB`
+              : `${projectSummary.estimatedStorageTB.toFixed(
+                  1,
+                )} TB`
+
           const hasCableFailure =
             longestCableMetres >
             100
@@ -155,13 +208,18 @@ export default function EquipmentHubLayer(): JSX.Element {
               ? 'CABLE OVER LIMIT'
               : hasCableWarning
                 ? 'CABLE WARNING'
-                : poeAnalysis.status
+                : cameraCount > 0 &&
+                    !recommendedNvr
+                  ? 'NO SUITABLE NVR'
+                  : poeAnalysis.status
 
           const statusColor =
             rackStatus ===
               'CABLE OVER LIMIT' ||
             rackStatus ===
-              'NO SUITABLE SWITCH'
+              'NO SUITABLE SWITCH' ||
+            rackStatus ===
+              'NO SUITABLE NVR'
               ? '#ff5d5d'
               : rackStatus ===
                     'CABLE WARNING' ||
@@ -510,7 +568,7 @@ export default function EquipmentHubLayer(): JSX.Element {
                     y={0}
 
                     width={164}
-                    height={156}
+                    height={210}
 
                     fill="#101419"
 
@@ -701,11 +759,83 @@ export default function EquipmentHubLayer(): JSX.Element {
                     listening={false}
                   />
 
+                  {/* NVR */}
+
+                  <Text
+                    x={10}
+                    y={132}
+                    width={144}
+
+                    text={`NVR     ${nvrName}`}
+
+                    fill={
+                      recommendedNvr
+                        ? '#ffffff'
+                        : cameraCount === 0
+                          ? '#7f8995'
+                          : '#ff5d5d'
+                    }
+
+                    fontSize={8}
+
+                    fontStyle="bold"
+
+                    listening={false}
+                  />
+
+                  {/* NVR CHANNELS */}
+
+                  <Text
+                    x={10}
+                    y={146}
+                    width={144}
+
+                    text={`CHANNELS ${nvrChannelText}`}
+
+                    fill="#c5ccd6"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* NVR BANDWIDTH */}
+
+                  <Text
+                    x={10}
+                    y={158}
+                    width={144}
+
+                    text={`BANDWIDTH ${nvrBandwidthText}`}
+
+                    fill="#c5ccd6"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
+                  {/* STORAGE */}
+
+                  <Text
+                    x={10}
+                    y={170}
+                    width={144}
+
+                    text={`STORAGE ${nvrStorageText}`}
+
+                    fill="#c5ccd6"
+
+                    fontSize={7}
+
+                    listening={false}
+                  />
+
                   {/* STATUS BAR */}
 
                   <Rect
                     x={9}
-                    y={136}
+                    y={190}
                     width={146}
                     height={12}
 
@@ -726,7 +856,7 @@ export default function EquipmentHubLayer(): JSX.Element {
 
                   <Text
                     x={10}
-                    y={139}
+                    y={193}
                     width={144}
 
                     text={

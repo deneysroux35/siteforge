@@ -13,13 +13,16 @@ import type {
 
 export interface CameraPoeLoad {
   cameraId: string
+
   cameraName: string
 
   manufacturer:
-    string | undefined
+    | string
+    | undefined
 
   model:
-    string | undefined
+    | string
+    | undefined
 
   powerWatts: number
 
@@ -39,7 +42,8 @@ export interface RackPoeAnalysis {
     CameraPoeLoad[]
 
   recommendedSwitch:
-    PoeSwitchProduct | null
+    | PoeSwitchProduct
+    | null
 
   freePoePorts: number
 
@@ -61,8 +65,7 @@ export interface RackPoeAnalysis {
 
 /*
  * Used only when a placed camera
- * has not yet been assigned a
- * recognised catalogue model.
+ * has no verified catalogue power.
  */
 const FALLBACK_CAMERA_POWER_WATTS =
   8
@@ -85,9 +88,37 @@ function roundTo(
 function findCatalogueCamera(
   camera: Camera,
 ) {
+  /*
+   * First try product ID.
+   */
+  if (
+    camera.productId
+  ) {
+    const productById =
+      cameraDatabase.find(
+        (product) =>
+          product.id ===
+          camera.productId,
+      )
+
+    if (
+      productById
+    ) {
+      return productById
+    }
+  }
+
+  /*
+   * Then try manufacturer +
+   * model for older drawings.
+   */
   if (
     !camera.manufacturer ||
-    !camera.model
+    !camera.model ||
+    camera.manufacturer ===
+      'Unassigned' ||
+    camera.model ===
+      'Unassigned'
   ) {
     return undefined
   }
@@ -104,6 +135,49 @@ function findCatalogueCamera(
 export function calculateCameraPoeLoad(
   camera: Camera,
 ): CameraPoeLoad {
+  /*
+   * BEST SOURCE
+   *
+   * Camera Library stores the
+   * verified product power directly
+   * on the placed camera.
+   */
+  if (
+    typeof camera.power ===
+      'number' &&
+    Number.isFinite(
+      camera.power,
+    ) &&
+    camera.power > 0
+  ) {
+    return {
+      cameraId:
+        camera.id,
+
+      cameraName:
+        camera.name,
+
+      manufacturer:
+        camera.manufacturer,
+
+      model:
+        camera.model,
+
+      powerWatts:
+        camera.power,
+
+      source:
+        'catalogue',
+    }
+  }
+
+  /*
+   * SECOND SOURCE
+   *
+   * Older projects may not contain
+   * camera.power, so look up the
+   * selected catalogue camera.
+   */
   const catalogueCamera =
     findCatalogueCamera(
       camera,
@@ -133,6 +207,14 @@ export function calculateCameraPoeLoad(
     }
   }
 
+  /*
+   * LAST RESORT
+   *
+   * Keep rack sizing operational
+   * for an unassigned camera while
+   * clearly marking the value as
+   * provisional.
+   */
   return {
     cameraId:
       camera.id,
@@ -176,9 +258,19 @@ function selectPoeSwitch(
             )
           }
 
-          return (
-            first.poeBudgetWatts -
+          if (
+            first.poeBudgetWatts !==
             second.poeBudgetWatts
+          ) {
+            return (
+              first.poeBudgetWatts -
+              second.poeBudgetWatts
+            )
+          }
+
+          return (
+            first.sellPrice -
+            second.sellPrice
           )
         },
       )
@@ -231,27 +323,31 @@ export function analyseRackPoe(
     ).length
 
   /*
-   * An empty rack does not require
-   * a switch yet.
+   * Empty rack.
    */
   if (
     cameraCount === 0
   ) {
     return {
-      cameraCount: 0,
+      cameraCount:
+        0,
 
-      requiredPoePorts: 0,
+      requiredPoePorts:
+        0,
 
-      totalPoeWatts: 0,
+      totalPoeWatts:
+        0,
 
       cameraLoads,
 
       recommendedSwitch:
         null,
 
-      freePoePorts: 0,
+      freePoePorts:
+        0,
 
-      poeHeadroomWatts: 0,
+      poeHeadroomWatts:
+        0,
 
       portUtilisationPercentage:
         0,
@@ -265,14 +361,23 @@ export function analyseRackPoe(
       status:
         'HEALTHY',
 
-      warnings: [],
+      warnings:
+        [],
     }
   }
+
+  /*
+   * Include engineering headroom
+   * when selecting the switch.
+   */
+  const requiredWattsWithHeadroom =
+    totalPoeWatts *
+    1.25
 
   const recommendedSwitch =
     selectPoeSwitch(
       requiredPoePorts,
-      totalPoeWatts,
+      requiredWattsWithHeadroom,
     )
 
   if (
@@ -352,6 +457,10 @@ export function analyseRackPoe(
   const warnings: string[] =
     []
 
+  /*
+   * Warn when very little port
+   * capacity remains.
+   */
   if (
     portUtilisationPercentage >=
     90
@@ -361,6 +470,10 @@ export function analyseRackPoe(
     )
   }
 
+  /*
+   * Warn when the switch PoE
+   * budget is heavily utilised.
+   */
   if (
     poeUtilisationPercentage >=
     80
@@ -370,6 +483,12 @@ export function analyseRackPoe(
     )
   }
 
+  /*
+   * Any fallback power value means
+   * the engineering figure has not
+   * yet been verified by a selected
+   * catalogue product.
+   */
   if (
     fallbackCameraCount > 0
   ) {
@@ -378,7 +497,11 @@ export function analyseRackPoe(
         fallbackCameraCount === 1
           ? ''
           : 's'
-      } are using fallback power values because no catalogue match was found.`,
+      } ${
+        fallbackCameraCount === 1
+          ? 'is'
+          : 'are'
+      } using fallback PoE power because no verified catalogue power value was found.`,
     )
   }
 
@@ -404,7 +527,8 @@ export function analyseRackPoe(
     fallbackCameraCount,
 
     status:
-      warnings.length > 0
+      warnings.length >
+      0
         ? 'WARNING'
         : 'HEALTHY',
 
