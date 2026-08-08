@@ -325,11 +325,45 @@ export default function CameraLibrary({
         name:
           `${item.manufacturer} ${item.model}`,
 
+        productId:
+          item.id,
+
+        manufacturer:
+          item.manufacturer,
+
+        model:
+          item.model,
+
+        resolutionMP:
+          Number(
+            item.resolution.replace(
+              /[^0-9.]/g,
+              '',
+            ),
+          ),
+
+        lens:
+          Number(
+            item.lens.replace(
+              /[^0-9.]/g,
+              '',
+            ),
+          ),
+
         fieldOfView:
           item.fieldOfView,
 
         range:
           item.range,
+
+        irRange:
+          item.irRange,
+
+        power:
+          item.unitPower,
+
+        unitPrice:
+          item.unitPrice,
       },
     )
 

@@ -21,6 +21,14 @@ type CameraPropertyChanges =
       | 'rotation'
       | 'fieldOfView'
       | 'range'
+      | 'productId'
+      | 'manufacturer'
+      | 'model'
+      | 'resolutionMP'
+      | 'lens'
+      | 'irRange'
+      | 'power'
+      | 'unitPrice'
     >
   >
 
@@ -1438,36 +1446,6 @@ export const useDesignerStore =
                 return state
               }
 
-              const remainingEquipmentHubs =
-                state.equipmentHubs.filter(
-                  (hub) =>
-                    !hub.selected,
-                )
-
-              let rackNumber = 1
-
-              const renumberedEquipmentHubs =
-                remainingEquipmentHubs.map(
-                  (hub) => {
-                    if (
-                      hub.type !== 'rack'
-                    ) {
-                      return hub
-                    }
-
-                    const renamedHub = {
-                      ...hub,
-
-                      name:
-                        `Main Rack ${rackNumber}`,
-                    }
-
-                    rackNumber += 1
-
-                    return renamedHub
-                  },
-                )
-
               return {
                 past: [
                   ...state.past,
@@ -1492,7 +1470,10 @@ export const useDesignerStore =
                   ),
 
                 equipmentHubs:
-                  renumberedEquipmentHubs,
+                  state.equipmentHubs.filter(
+                    (hub) =>
+                      !hub.selected,
+                  ),
 
                 future: [],
               }
